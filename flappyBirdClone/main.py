@@ -34,13 +34,9 @@ if __name__ == "__main__":
     text_rect.center = (WIDTH // 2, HEIGHT // 8)
 
     while running:
-        # Did the user click the window close button?
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.VIDEORESIZE:
-                WINDOW.blit(pygame.transform.scale(SCREEN, WINDOW.get_rect().size), (0, 0))
-                pygame.display.flip()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     player.jump()
