@@ -56,10 +56,8 @@ if __name__ == "__main__":
             if result == 1:
                 clone.remove(element)
                 score = 0
-                print(score)
             elif result == 2:
                 score += 1
-                print(score)
         obstacles = clone
 
         if obstacle_timer > 0:
