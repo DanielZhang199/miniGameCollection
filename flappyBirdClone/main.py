@@ -12,8 +12,8 @@ if __name__ == "__main__":
     WIDTH = 2560
     FPS = 60
 
-    monitorSize = pygame.display.Info()
-    WINDOW = pygame.display.set_mode((monitorSize.current_w // 2, monitorSize.current_h // 2), pygame.RESIZABLE)
+    MONITOR_SIZE = pygame.display.Info()
+    WINDOW = pygame.display.set_mode((MONITOR_SIZE.current_w // 2, MONITOR_SIZE.current_h // 2), pygame.RESIZABLE)
     SCREEN = pygame.Surface((WIDTH, HEIGHT))
 
     OBSTACLE_INTERVAL = int(1.5 * FPS)
@@ -27,6 +27,7 @@ if __name__ == "__main__":
     obstacle_timer = OBSTACLE_INTERVAL
     score = 0
     font = pygame.font.SysFont('Impact.ttf', 120)
+    fullscreen = False
 
     score_text = font.render("0", True, (0, 0, 0))
     text_rect = score_text.get_rect()
@@ -38,18 +39,21 @@ if __name__ == "__main__":
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.VIDEORESIZE:
-                w, h = event.size
-                if w > h:
-                    h = w * 9 // 16
-                else:
-                    w = h * 16 // 9
-                WINDOW = pygame.display.set_mode((w, h), pygame.RESIZABLE)
                 WINDOW.blit(pygame.transform.scale(SCREEN, WINDOW.get_rect().size), (0, 0))
+                pygame.display.flip()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     player.jump()
                 elif event.key == pygame.K_ESCAPE:
                     running = False
+                elif event.key == pygame.K_F11:
+                    if fullscreen:
+                        WINDOW = pygame.display.set_mode((MONITOR_SIZE.current_w // 2, MONITOR_SIZE.current_h // 2),
+                                                         pygame.RESIZABLE)
+                    else:
+                        WINDOW = pygame.display.set_mode((MONITOR_SIZE.current_w, MONITOR_SIZE.current_h),
+                                                         pygame.FULLSCREEN)
+                    fullscreen = not fullscreen
 
         SCREEN.fill((255, 238, 179))
 
