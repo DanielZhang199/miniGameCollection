@@ -8,10 +8,14 @@ if __name__ == "__main__":
     pygame.init()
     pygame.display.set_caption('Minimalist Flappy Bird')
 
-    HEIGHT = 720
-    WIDTH = 1280
+    HEIGHT = 1440
+    WIDTH = 2560
     FPS = 60
-    SCREEN = pygame.display.set_mode((WIDTH, HEIGHT))
+
+    monitorSize = pygame.display.Info()
+    WINDOW = pygame.display.set_mode((monitorSize.current_w // 2, monitorSize.current_h // 2), pygame.RESIZABLE)
+    SCREEN = pygame.Surface((WIDTH, HEIGHT))
+
     OBSTACLE_INTERVAL = int(1.5 * FPS)
     PLAYER_X = 500
     PLAYER_START_Y = 400
@@ -33,6 +37,14 @@ if __name__ == "__main__":
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.VIDEORESIZE:
+                w, h = event.size
+                if w > h:
+                    h = w * 9 // 16
+                else:
+                    w = h * 16 // 9
+                WINDOW = pygame.display.set_mode((w, h), pygame.RESIZABLE)
+                WINDOW.blit(pygame.transform.scale(SCREEN, WINDOW.get_rect().size), (0, 0))
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     player.jump()
@@ -42,7 +54,7 @@ if __name__ == "__main__":
         SCREEN.fill((255, 238, 179))
 
         # Draw and update objects
-        pygame.draw.rect(SCREEN, (184, 231, 225), pygame.Rect(player.get_x(), player.get_y(), 40, 40))
+        pygame.draw.rect(SCREEN, (184, 231, 225), pygame.Rect(player.get_x(), player.get_y(), 80, 80))
         player.tick()
 
         clone = obstacles.copy()
@@ -71,6 +83,7 @@ if __name__ == "__main__":
         SCREEN.blit(score_text, text_rect)
 
         # Update the display
+        WINDOW.blit(pygame.transform.scale(SCREEN, WINDOW.get_rect().size), (0, 0))
         pygame.display.flip()
         pygame.time.Clock().tick(FPS)
 

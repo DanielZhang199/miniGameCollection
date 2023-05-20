@@ -1,9 +1,9 @@
-GRAVITY = 0.5  # this is player acceleration by default
-JUMP_STRENGTH = -10  # this is how fast you go after a jump
+GRAVITY = 1  # this is player acceleration by default
+JUMP_STRENGTH = -20  # this is how fast you go after a jump
 JUMP_TIMER = 5  # how many frames before next jump
-TERMINAL_VELOCITY = 25
-MAX_HEIGHT = 680  # lowest the ball can go on the screen (player is 40 pixels in size)
-MIN_HEIGHT = -40  # highest the ball can go on the screen
+TERMINAL_VELOCITY = 50
+MAX_HEIGHT = 1360  # lowest the ball can go on the screen (player is 40 pixels in size)
+MIN_HEIGHT = -80  # highest the ball can go on the screen
 
 
 class Player:

@@ -1,20 +1,20 @@
 import random
 
-SCROLL_SPEED = 5  # how fast the obstacles move
-SCREEN_HEIGHT = 720
-SCREEN_WIDTH = 1280
-WIDTH = 70  # obstacle width
-SPACING = 75  # double this value is how wide the opening is in pixels
-PLAYER_SIZE = 40
+SCROLL_SPEED = 10  # how fast the obstacles move
+SCREEN_HEIGHT = 1440
+SCREEN_WIDTH = 2560
+WIDTH = 140  # obstacle width
+SPACING = 150  # double this value is how wide the opening is in pixels
+PLAYER_SIZE = 80
 
 
 class Obstacle:
     """
     Obstacle has a bounding box composed of 2 rectangles, and moves from right to left, opening location is random
-    position that is 80 pixels away from the top of the screen (times the scaling factor)
+    position that is 160 pixels from the top or bottom
     """
     def __init__(self):
-        self._center = random.randint(80, (SCREEN_HEIGHT - 80))
+        self._center = random.randint(160, (SCREEN_HEIGHT - 160))
         self._x = SCREEN_WIDTH
         self._cleared = False
 
