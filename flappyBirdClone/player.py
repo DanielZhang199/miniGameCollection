@@ -21,10 +21,10 @@ class Player:
         if self.__cooldown <= 0:
             self._dy = JUMP_STRENGTH
             self.__cooldown = JUMP_TIMER
-        else:
-            print("FAILED JUMP")
 
     def tick(self):
+        if self._dy < TERMINAL_VELOCITY:
+            self._dy += GRAVITY
         self._y += self._dy
         if self._y > MAX_HEIGHT:
             self._y = MAX_HEIGHT
@@ -32,8 +32,6 @@ class Player:
         elif self._y < MIN_HEIGHT:
             self._y = MIN_HEIGHT
 
-        if self._dy < TERMINAL_VELOCITY:
-            self._dy += GRAVITY
         if self.__cooldown > 0:
             self.__cooldown -= 1
 
