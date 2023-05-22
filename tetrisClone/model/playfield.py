@@ -1,5 +1,3 @@
-from tetrominoes import Piece
-
 WIDTH = 10
 HEIGHT = 22
 # top 2 rows are invisible and not rendered
@@ -17,13 +15,15 @@ class Playfield:
         self._grid = [[None for _ in range(HEIGHT)] for _ in range(WIDTH)]
 
     # TODO: implement this
-    def add_blocks(self, piece: Piece):
+    def add_blocks(self, coords, colour):
         """
         adds pieces to board grid and removes row if necessary
-        :param piece: one of the classes in tetrominoes module
+        :param coords: array of coordinates (list) or (tuple)
+        :param colour: (list) or (tuple); r, g, b values
         :return: nothing
         """
-        pass
+        for x, y in coords:
+            self._grid[x][y] = colour
 
     def get_contents(self, x: int, y: int):
         """
@@ -35,7 +35,15 @@ class Playfield:
         return self._grid[x][y]
 
     def is_clear(self, x: int, y: int):
-        return self._grid[x][y] is None
+        """
+        returns true if there is an empty space at requested x, y position, false if it is occupied our out of bounds
+        :param x:
+        :param y:
+        :return:
+        """
+        if 0 <= x <= 9 and 0 <= y <= 21:
+            return self._grid[x][y] is None
+        return False
 
 
 if __name__ == "__main__":
