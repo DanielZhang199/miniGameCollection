@@ -199,7 +199,9 @@ if __name__ == "__main__":
     print(piece.get_coordinates(), piece.get_corner_position())
 
     piece.hard_drop()
-    for i in range(22):
-        for j in range(10):
-            print(field.is_clear(j, 21 - i), end="")
+
+    X, Y = field.get_dimensions()
+    for i in range(Y):
+        for j in range(X):
+            print(field.is_clear(j, Y - i - 1), end="")
         print()
