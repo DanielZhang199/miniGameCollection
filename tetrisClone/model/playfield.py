@@ -11,9 +11,9 @@ class Playfield:
     """
     def __init__(self):
         """
-        creates a 2d array of WIDTH rows with HEIGHT columns, coordinate on the board is grid[x][y]
+        creates a 2d array of HEIGHT rows with WIDTH columns, coordinate on the board is grid[y][x]
         """
-        self._grid = [[None for _ in range(HEIGHT)] for _ in range(WIDTH)]
+        self._grid = [[None for _ in range(WIDTH)] for _ in range(HEIGHT)]
 
     # TODO: implement this
     def add_blocks(self, coords, colour):
@@ -23,22 +23,19 @@ class Playfield:
         :param colour: list or tuple; (r, g, b) values
         :return: (int) number of rows cleared
         """
-        # we will be using naive line drop gravity logic (https://tetris.fandom.com/wiki/Line_clear#Line_clear_gravity)
-        filled_rows = set()
+        # using naive line drop gravity logic (https://tetris.fandom.com/wiki/Line_clear#Line_clear_gravity)
+        modified_rows = set()
         for x, y in coords:
-            self._grid[x][y] = colour
-            if self._check_row(y):
-                filled_rows.add(y)
+            self._grid[y][x] = colour
+            modified_rows.add(y)
 
         # clear lines top to bottom to ensure the lines being cleared don't move whilst clearing lines
-        score = len(filled_rows)
-        while filled_rows:
-            y = max(filled_rows)
-            for x in range(WIDTH):
-                self._grid[x][y] = None
-            # for each cleared row, drop all blocks above the row down one square
-            self._drop_from(y)
-            filled_rows.remove(y)
+        score = 0
+        for y in modified_rows:
+            if self._check_row(y):
+                del self._grid[y]
+                self._grid.append([None for _ in range(WIDTH)])
+                score += 1
 
         return score
 
@@ -48,20 +45,20 @@ class Playfield:
         keep in mind row 20 is index 19, as row index starts from 0.
         :return: (boolean)
         """
-        for x in range(WIDTH):
-            if not self.is_clear(x, 20):
-                # theoretically, there can't be anything above row 21 if row 21 is empty due to how pieces work
+        # theoretically, there can't be anything above row 21 if row 21 is empty due to how pieces work
+        for element in self._grid[20]:
+            if element is not None:
                 return True
         return False
 
     def get_contents(self, x: int, y: int):
         """
-        returns tuple of colour of piece in x, y coordinate, or None, will raise exception if out of bounds;
+        returns tuple of colour of piece in x, y coordinate, or None, will raise exception if out of bounds
         :param x: between 0 to WIDTH - 1
         :param y: between 0 to HEIGHT - 1
         :return: (r, g, b) or None
         """
-        return self._grid[x][y]
+        return self._grid[y][x]
 
     def is_clear(self, x: int, y: int):
         """
@@ -71,7 +68,7 @@ class Playfield:
         :return: (boolean)
         """
         if 0 <= x < WIDTH and 0 <= y < HEIGHT:
-            return self._grid[x][y] is None
+            return self._grid[y][x] is None
         return False
 
     def _check_row(self, n):
@@ -80,23 +77,10 @@ class Playfield:
         :param n: (int) row number, between 0 to HEIGHT - 1
         :return: (boolean)
         """
-        for x in range(WIDTH):
-            if self.is_clear(x, n):
+        for element in self._grid[n]:
+            if element is None:
                 return False
         return True
-
-    def _drop_from(self, n):
-        """
-        drops all the pieces above row n down by one block
-        :param n: (int), between 0 to HEIGHT - 1
-        :return: nothing
-        """
-        for x in range(WIDTH):
-            for y in range(n + 1, HEIGHT):
-                contents = self._grid[x][y]
-                if contents is not None:
-                    self._grid[x][y] = None
-                    self._grid[x][y - 1] = contents
 
     @staticmethod
     def get_dimensions():
