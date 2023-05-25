@@ -1,8 +1,7 @@
 WIDTH = 10
-HEIGHT = 24
-# top 4 rows are invisible and not rendered
-# game ends as soon as piece lands and has blocks above 20th row (i.e. off screen). We need 4 extra rows so the code
-# doesn't crash if you place an I-piece on a block in row 20
+HEIGHT = 22
+# top 2 rows are invisible and not rendered
+# game ends as soon as piece lands and has blocks above 20th row (i.e. off screen).
 
 
 class Playfield:
@@ -26,8 +25,11 @@ class Playfield:
         # using naive line drop gravity logic (https://tetris.fandom.com/wiki/Line_clear#Line_clear_gravity)
         modified_rows = set()
         for x, y in coords:
-            self._grid[y][x] = colour
-            modified_rows.add(y)
+            try:
+                self._grid[y][x] = colour
+                modified_rows.add(y)
+            except IndexError:
+                pass
 
         # clear lines top to bottom to ensure the lines being cleared don't move whilst clearing lines
         score = 0
@@ -103,3 +105,9 @@ if __name__ == "__main__":
     print_field()
     print("Score = " + str(testBoard.add_blocks([(9, 0), (9, 1), (9, 2), (9, 3)], (0, 0, 0))))
     print_field()
+    print("Score = " + str(testBoard.add_blocks([(9, 19)], (0, 0, 0))))
+    print_field()
+    print(testBoard.garbage_out())
+    print("Score = " + str(testBoard.add_blocks([(9, 20), (9, 22)], (0, 0, 0))))
+    print_field()
+    print(testBoard.garbage_out())
