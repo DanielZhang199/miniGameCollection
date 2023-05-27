@@ -1,5 +1,14 @@
-# TODO: Figure out wall kicks
+# TODO: Figure out wall kicks; figure out infinity
 from playfield import Playfield
+
+JLTSZ_WALL_KICK_DATA = {"0>1": ((-1, 0), (-1, 1), (0, -2), (-1, -2)), "1>0": ((1, 0), (1, -1), (0, 2), (1, 2)),
+                        "1>2": ((1, 0), (1, -1), (0, 2), (1, 2)), "2>1": ((-1, 0), (-1, 1), (0, -2), (-1, -2)),
+                        "2>3": ((1, 0), (1, 1), (0, -2), (1, -2)), "3>2": ((-1, 0), (-1, -1), (0, 2), (-1, 2)),
+                        "3>0": ((-1, 0), (-1, -1), (0, 2), (-1, 2)), "0>3": ((1, 0), (1, 1), (0, -2), (1, -2))}
+I_WALL_KICK_DATA = {"0>1": ((-2, 0), (1, 0), (-2, -1), (1, 2)), "1>0": ((2, 0), (-1, 0), (2, 1), (-1, -2)),
+                    "1>2": ((-1, 0), (2, 0), (-1, 2), (2, -1)), "2>1": ((1, 0), (-2, 0), (1, -2), (-2, 1)),
+                    "2>3": ((2, 0), (-1, 0), (2, 1), (-1, -2)), "3>2": ((-2, 0), (1, 0), (-2, -1), (1, 2)),
+                    "3>0": ((1, 0), (-2, 0), (1, -2), (-2, 1)), "0>3": ((-1, 0), (2, 0), (-1, 2), (2, -1))}
 
 
 def num_to_piece(pf: Playfield, n: int):
@@ -90,46 +99,57 @@ class Piece:
         while self.drop():
             pass
 
-    def rotate(self):
+    def rotate_right(self):
         """
-        tries to rotate the piece (using the SRS algorithm)
+        tries to rotate the piece right (using the SRS algorithm)
         :return: nothing
         """
-        match self._rotation:
-            case 0:
-                self._try_orient((1, 2, 3))
-            case 1:
-                self._try_orient((2, 3, 0))
-            case 2:
-                self._try_orient((3, 0, 1))
-            case 3:
-                self._try_orient((0, 1, 2))
+        if self._rotation == 3:
+            new_state = 0
+        else:
+            new_state = self._rotation + 1
+        self._try_set_coords(self._get_rotation_coords(new_state), new_state)
+
+    def rotate_left(self):
+        """
+        tries to rotate the piece right (using the SRS algorithm)
+        :return: nothing
+        """
+        if self._rotation == 0:
+            new_state = 3
+        else:
+            new_state = self._rotation - 1
+        self._try_set_coords(self._get_rotation_coords(new_state), new_state)
 
     # abstract methods
     @staticmethod
     def get_colour():
         raise NotImplementedError("Subclass did not implement get_colour method")
 
-    def _try_orient(self, order):
-        raise NotImplementedError("Subclass did not implement try_orient method")
+    def _get_rotation_coords(self, order):
+        raise NotImplementedError("Subclass did not implement _try_place method")
 
     # shared helper methods
-    def _try_set_coords(self, relative_coordinates, rotation_val):
+    def _try_set_coords(self, coords, orientation):
         valid = True
-        for x, y in relative_coordinates:
-            x, y = self._abs_coords(x, y)
+        for x, y in coords:
             if not self._field.is_clear(x, y):
                 valid = False
                 break
         if valid:
-            self._rotation = rotation_val
-            self._coordinates = tuple(((self._abs_coords(x, y)) for x, y in relative_coordinates))
+            self._rotation = orientation
+            self._coordinates = coords
             return True
         else:
             return False
 
-    def _abs_coords(self, x, y):
-        return self._corner[0] + x, self._corner[1] - y
+    def _abs_coords(self, coords):
+        """
+        takes in list of 4 relative coordinates to corner point, turns them into absolute coordinates
+        :param coords: (iterable) of x, y
+        :return: (tuple) represents a possible value for self._coordinates
+        """
+        return tuple((self._corner[0] + x, self._corner[1] - y) for x, y in coords)
 
 
 class IPiece(Piece):
@@ -138,23 +158,21 @@ class IPiece(Piece):
         # list of coordinates of each piece when spawning
         self._coordinates = ((3, 20), (4, 20), (5, 20), (6, 20))
 
-    def _try_orient(self, order: tuple):
+    def _get_rotation_coords(self, orientation):
         """
-        tries to orient the piece into the rotations states specified, stopping at the first valid state
-        :param order: (tuple) list of rotation states, represented as integers from 0-3
-        :return: nothing
+        gets the positions of pieces if tetromino was to rotate into specified position
+        :param orientation: (int) rotation state, represented as an integer from 0-3
+        :return: coords
         """
-        for i in order:
-            if i == 0:
-                relative_coordinates = ((0, 1), (1, 1), (2, 1), (3, 1))
-            elif i == 1:
-                relative_coordinates = ((2, 0), (2, 1), (2, 2), (2, 3))
-            elif i == 2:
-                relative_coordinates = ((0, 2), (1, 2), (2, 2), (3, 2))
-            else:  # i == 3
-                relative_coordinates = ((1, 0), (1, 1), (1, 2), (1, 3))
-            if self._try_set_coords(relative_coordinates, i):
-                break
+        if orientation == 0:
+            relative_coordinates = ((0, 1), (1, 1), (2, 1), (3, 1))
+        elif orientation == 1:
+            relative_coordinates = ((2, 0), (2, 1), (2, 2), (2, 3))
+        elif orientation == 2:
+            relative_coordinates = ((0, 2), (1, 2), (2, 2), (3, 2))
+        else:  # i == 3
+            relative_coordinates = ((1, 0), (1, 1), (1, 2), (1, 3))
+        return self._abs_coords(relative_coordinates)
 
     @staticmethod
     def get_colour():
@@ -257,11 +275,17 @@ if __name__ == "__main__":
     #     print()
 
     # ROTATION TEST
-    playfield.add_blocks(((5, 18), (3, 21), (6, 19)), (0, 0, 0))
+    playfield.add_blocks(((4, 18), ), (0, 0, 0))
     print(piece.get_coordinates(), piece.get_corner_position(), piece._rotation)
-    piece.rotate()
+    piece.rotate_right()
     print(piece.get_coordinates(), piece.get_corner_position(), piece._rotation)
-    piece.rotate()
+    piece.rotate_right()
     print(piece.get_coordinates(), piece.get_corner_position(), piece._rotation)
-    piece.rotate()
+    piece.rotate_right()
+    print(piece.get_coordinates(), piece.get_corner_position(), piece._rotation)
+    piece.rotate_left()
+    print(piece.get_coordinates(), piece.get_corner_position(), piece._rotation)
+    piece.rotate_left()
+    print(piece.get_coordinates(), piece.get_corner_position(), piece._rotation)
+    piece.rotate_left()
     print(piece.get_coordinates(), piece.get_corner_position(), piece._rotation)
