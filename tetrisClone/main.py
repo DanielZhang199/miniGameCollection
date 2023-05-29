@@ -16,6 +16,9 @@ BG_COLOUR = (95,) * 3
 GRID_COLOUR = (30,) * 3
 EMPTY_COLOUR = (10,) * 3
 
+MUSIC_FILE = "TetrisTheme.ogg"
+VOLUME = 0.1
+
 
 def draw_field(pf: Playfield):
     # field goes from top to bottom of window, and 175 pixels from each edge of window
@@ -68,6 +71,11 @@ if __name__ == "__main__":
     surface.fill(BG_COLOUR)
     display_field = pg.Surface(FIELD_SIZE)
     display_field.fill(EMPTY_COLOUR)
+
+    pg.mixer.music.load(MUSIC_FILE)
+    pg.mixer.music.set_volume(VOLUME)
+    pg.mixer.music.play(-1)
+
     window_open = True
 
     selector = Bag()
