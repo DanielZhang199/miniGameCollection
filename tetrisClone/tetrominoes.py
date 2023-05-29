@@ -1,4 +1,4 @@
-from playfield import Playfield
+from tetrisClone.playfield import Playfield
 
 JLTSZ_WALL_KICK_DATA = {"0>1": ((-1, 0), (-1, 1), (0, -2), (-1, -2)), "1>0": ((1, 0), (1, -1), (0, 2), (1, 2)),
                         "1>2": ((1, 0), (1, -1), (0, 2), (1, 2)), "2>1": ((-1, 0), (-1, 1), (0, -2), (-1, -2)),
@@ -197,7 +197,7 @@ class IPiece(Piece):
 class ZPiece(Piece):
     def __init__(self, pf):
         super().__init__(pf)
-        self._coordinates = [[3, 21], [4, 21], [4, 22], [5, 22]]
+        self._coordinates = [[3, 21], [4, 21], [4, 20], [5, 20]]
 
     def _get_rotation_coords(self, orientation):
         """
@@ -349,8 +349,14 @@ class OPiece(Piece):
 
 
 if __name__ == "__main__":
+    from tetrisClone.bag import Bag
+    piece_bag = Bag()
+
     playfield = Playfield()
-    piece = IPiece(playfield)
+    for i in range(10):
+        piece = num_to_piece(playfield, piece_bag.next())
+        print(piece.get_colour())
+        print(type(piece))
 
     # MOVEMENT TEST
     # print(piece.get_coordinates(), piece.get_corner_position())
