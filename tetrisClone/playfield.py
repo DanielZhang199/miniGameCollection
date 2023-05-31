@@ -14,7 +14,6 @@ class Playfield:
         """
         self._grid = [[None for _ in range(WIDTH)] for _ in range(HEIGHT)]
 
-    # TODO: implement this
     def add_blocks(self, coords, colour):
         """
         adds pieces to board grid and removes row if necessary. Returns number of rows cleared
@@ -33,11 +32,13 @@ class Playfield:
 
         # clear lines top to bottom to ensure the lines being cleared don't move whilst clearing lines
         score = 0
-        for y in modified_rows:
+        while modified_rows:
+            y = max(modified_rows)
             if self._check_row(y):
                 del self._grid[y]
                 self._grid.append([None for _ in range(WIDTH)])
                 score += 1
+            modified_rows.remove(y)
 
         return score
 
