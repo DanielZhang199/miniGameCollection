@@ -64,7 +64,18 @@ def display_next(pieces):
     pass
 
 
+def next_piece():
+    global cur_piece, score
+    score += cur_piece.place()
+    if field.garbage_out():
+        return False
+    cur_piece = tet.num_to_piece(field, selector.next())
+    cur_piece.drop()
+    return True
+
+
 if __name__ == "__main__":
+    # setup
     pg.init()
     window = pg.display.set_mode(WINDOW_SIZE, pg.RESIZABLE)
     surface = pg.Surface(SURFACE_SIZE)
@@ -80,18 +91,50 @@ if __name__ == "__main__":
 
     selector = Bag()
     field = Playfield()
-    for i in range(7):
-        cur_piece = tet.num_to_piece(field, selector.next())
-        cur_piece.hard_drop()
     cur_piece = tet.num_to_piece(field, selector.next())
-    cur_piece.drop()
-    cur_piece.drop()
+
+    speed = 1
+    next_move = FPS
+    place_cd = 0
+    score = 0
 
     while window_open:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 window_open = False
+            elif event.type == pg.KEYDOWN:
+                match event.key:
+                    case pg.K_LEFT:
+                        cur_piece.left()
+                        place_cd = FPS // 2
+                    case pg.K_RIGHT:
+                        cur_piece.right()
+                        place_cd = FPS // 2
+                    case pg.K_DOWN:
+                        cur_piece.drop()
+                    case pg.K_SPACE:
+                        cur_piece.hard_drop()
+                        window_open = next_piece()
+                        next_move = FPS
+                    case pg.K_x | pg.K_UP:
+                        cur_piece.rotate_right()
+                        place_cd = FPS // 2
+                    case pg.K_z:
+                        cur_piece.rotate_left()
+                        place_cd = FPS // 2
+                    case pg.K_c:
+                        pass  # TODO: hold
 
+        next_move -= speed
+        if place_cd > 0:
+            place_cd -= 1
+        if next_move <= 0:
+            next_move = FPS
+            if not cur_piece.drop() and place_cd <= 0:
+                window_open = next_piece()
+
+        # clear field and redraw everything
+        display_field.fill(EMPTY_COLOUR)
         draw_field(field)
         draw_piece(cur_piece)
         draw_grid()
