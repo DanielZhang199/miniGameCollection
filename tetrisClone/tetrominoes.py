@@ -41,6 +41,7 @@ class Piece:
         self._corner = [3, 21]  # x, y position of top left corner of 'hit-box' for rotations
         self._rotation = 0
         self._field = pf
+        self._placed = False
         # all/most methods called on the piece will be with respect to the 'field', so it is also a field
 
     def get_corner_position(self):
@@ -85,16 +86,23 @@ class Piece:
         return True
 
     def place(self):
-        self._field.add_blocks(self._coordinates, self.get_colour())
+        """
+        if piece was not already placed down, places the piece and returns lines cleared, otherwise returns 0
+        :return: (int) lines cleared from placing that piece
+        """
+        if not self._placed:
+            score = self._field.add_blocks(self._coordinates, self.get_colour())
+            self._placed = True
+            return score
+        return 0
 
     def hard_drop(self):
         """
-        calls drop over and over until it returns false, then places block on field
+        calls drop over and over until it returns false
         :return: nothing
         """
         while self.drop():
             pass
-        self.place()
 
     def rotate_right(self):
         """
@@ -135,7 +143,6 @@ class Piece:
             kicks = self._get_kicks(orientation)
             for dx, dy in kicks:
                 if self._try_set_coords([[x + dx, y + dy] for x, y in coords]):
-                    print("KICK PERFORMED")
                     self._rotation = orientation
                     self._corner[0] += dx
                     self._corner[1] += dy
