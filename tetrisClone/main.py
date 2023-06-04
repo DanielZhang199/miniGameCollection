@@ -3,14 +3,24 @@ from bag import Bag
 from playfield import Playfield
 import tetrominoes as tet
 
-WINDOW_SIZE = 1280, 1280
-SURFACE_SIZE = 720, 720
+WINDOW_SIZE = 720, 720
 FPS = 10
 SQUARE_SIZE = 35
-FIELD_OFFSET = 185, 10
+FIELD_COORDS = 185, 10
 FIELD_SIZE = 350, 700
 GRID_DIMENSIONS = Playfield.get_dimensions()
 GRID_WIDTH = 4
+NEXT_SIZE = 150, 350
+NEXT_COORDS = 555, 20
+SCORE_SIZE = 150, 100
+SCORE_COORDS = 15, 20
+HOLD_SIZE = 150, 200
+HOLD_COORDS = 15, 150
+
+pg.font.init()
+FONT_SIZE = 45
+FONT = pg.font.SysFont('Lucon.ttf', FONT_SIZE)
+TEXT_COLOUR = (255, ) * 3
 
 BG_COLOUR = (95,) * 3
 GRID_COLOUR = (30,) * 3
@@ -34,23 +44,23 @@ def draw_field(pf: Playfield):
 def draw_grid():
     for x in range(GRID_DIMENSIONS[0]):
         x *= SQUARE_SIZE
-        pg.draw.line(display_field, GRID_COLOUR, (x, 0), (x, FIELD_SIZE[1]), GRID_WIDTH)
+        pg.draw.line(field_surface, GRID_COLOUR, (x, 0), (x, FIELD_SIZE[1]), GRID_WIDTH)
 
     for y in range(GRID_DIMENSIONS[1]):
         y *= SQUARE_SIZE
-        pg.draw.line(display_field, GRID_COLOUR, (0, y), (FIELD_SIZE[0], y), GRID_WIDTH)
+        pg.draw.line(field_surface, GRID_COLOUR, (0, y), (FIELD_SIZE[0], y), GRID_WIDTH)
 
     # draw missing outline directly on game surface
-    pg.draw.line(surface, GRID_COLOUR, (FIELD_OFFSET[0], FIELD_OFFSET[1] + FIELD_SIZE[1]),
-                 (FIELD_OFFSET[0] + FIELD_SIZE[0], FIELD_OFFSET[1] + FIELD_SIZE[1]), GRID_WIDTH)
-    pg.draw.line(surface, GRID_COLOUR, (FIELD_OFFSET[0] + FIELD_SIZE[0], FIELD_OFFSET[1]),
-                 (FIELD_OFFSET[0] + FIELD_SIZE[0], FIELD_OFFSET[1] + FIELD_SIZE[1] + GRID_WIDTH // 2), GRID_WIDTH)
+    pg.draw.line(window, GRID_COLOUR, (FIELD_COORDS[0], FIELD_COORDS[1] + FIELD_SIZE[1]),
+                 (FIELD_COORDS[0] + FIELD_SIZE[0], FIELD_COORDS[1] + FIELD_SIZE[1]), GRID_WIDTH)
+    pg.draw.line(window, GRID_COLOUR, (FIELD_COORDS[0] + FIELD_SIZE[0], FIELD_COORDS[1]),
+                 (FIELD_COORDS[0] + FIELD_SIZE[0], FIELD_COORDS[1] + FIELD_SIZE[1] + GRID_WIDTH // 2), GRID_WIDTH)
 
 
 def draw_block(x, y, colour):
     x = x * SQUARE_SIZE
     y = FIELD_SIZE[1] - (y + 1) * SQUARE_SIZE
-    pg.draw.rect(display_field, colour, pg.Rect(x, y, SQUARE_SIZE, SQUARE_SIZE))
+    pg.draw.rect(field_surface, colour, pg.Rect(x, y, SQUARE_SIZE, SQUARE_SIZE))
 
 
 def draw_piece(piece: tet.Piece):
@@ -67,6 +77,7 @@ def display_next(pieces):
 def next_piece():
     global cur_piece, score
     score += cur_piece.place()
+    update_score(score)
     if field.garbage_out():
         return False
     cur_piece = tet.num_to_piece(field, selector.next())
@@ -74,18 +85,49 @@ def next_piece():
     return True
 
 
+def update_field():
+    # clear field and redraw everything
+    field_surface.fill(EMPTY_COLOUR)
+    draw_field(field)
+    draw_piece(cur_piece)
+    draw_grid()
+
+
+def update_score(x):
+    # changes score display to x
+    score_surface.fill(GRID_COLOUR)
+    static_text = FONT.render("SCORE:", True, TEXT_COLOUR)
+    score_text = FONT.render(str(x * 100), True, TEXT_COLOUR)
+    score_x_pos = SCORE_SIZE[0] - score_text.get_rect().width - 5
+    score_surface.blit(static_text, (15, 5))
+    score_surface.blit(score_text, (score_x_pos, FONT_SIZE + 10))
+
+
+def blit_surfaces():
+    window.blit(field_surface, FIELD_COORDS)
+    window.blit(info_surface, NEXT_COORDS)
+    window.blit(score_surface, SCORE_COORDS)
+    window.blit(hold_surface, HOLD_COORDS)
+    pg.display.flip()
+
+
 if __name__ == "__main__":
     # setup
     pg.init()
-    window = pg.display.set_mode(WINDOW_SIZE, pg.RESIZABLE)
-    surface = pg.Surface(SURFACE_SIZE)
-    surface.fill(BG_COLOUR)
-    display_field = pg.Surface(FIELD_SIZE)
-    display_field.fill(EMPTY_COLOUR)
+    window = pg.display.set_mode(WINDOW_SIZE)
+    window.fill(BG_COLOUR)
+    field_surface = pg.Surface(FIELD_SIZE)
+    field_surface.fill(EMPTY_COLOUR)
+    info_surface = pg.Surface(NEXT_SIZE)
+    info_surface.fill(GRID_COLOUR)
+    score_surface = pg.Surface(SCORE_SIZE)
+    score_surface.fill(GRID_COLOUR)
+    hold_surface = pg.Surface(HOLD_SIZE)
+    hold_surface.fill(GRID_COLOUR)
 
-    pg.mixer.music.load(MUSIC_FILE)
-    pg.mixer.music.set_volume(VOLUME)
-    pg.mixer.music.play(-1)
+    # pg.mixer.music.load(MUSIC_FILE)
+    # pg.mixer.music.set_volume(VOLUME)
+    # pg.mixer.music.play(-1)
 
     window_open = True
 
@@ -97,6 +139,7 @@ if __name__ == "__main__":
     next_move = FPS
     place_cd = 0
     score = 0
+    update_score(0)
 
     while window_open:
         for event in pg.event.get():
@@ -133,13 +176,6 @@ if __name__ == "__main__":
             if not cur_piece.drop() and place_cd <= 0:
                 window_open = next_piece()
 
-        # clear field and redraw everything
-        display_field.fill(EMPTY_COLOUR)
-        draw_field(field)
-        draw_piece(cur_piece)
-        draw_grid()
-
-        surface.blit(display_field, FIELD_OFFSET)
-        window.blit(pg.transform.scale(surface, window.get_rect().size), (0, 0))
-        pg.display.flip()
+        update_field()
+        blit_surfaces()
         pg.time.Clock().tick(FPS)
