@@ -93,6 +93,10 @@ def update_field():
     draw_grid()
 
 
+def update_held():
+    pass
+
+
 def update_score(x):
     # changes score display to x
     score_surface.fill(GRID_COLOUR)
@@ -101,9 +105,20 @@ def update_score(x):
     score_x_pos = SCORE_SIZE[0] - score_text.get_rect().width - 5
     score_surface.blit(static_text, (15, 5))
     score_surface.blit(score_text, (score_x_pos, FONT_SIZE + 10))
+    window.blit(score_surface, SCORE_COORDS)
 
 
-def blit_surfaces():
+def setup_surfaces():
+    window.fill(BG_COLOUR)
+    field_surface.fill(EMPTY_COLOUR)
+    info_surface.fill(GRID_COLOUR)
+    score_surface.fill(GRID_COLOUR)
+    hold_surface.fill(GRID_COLOUR)
+
+    # pg.mixer.music.load(MUSIC_FILE)
+    # pg.mixer.music.set_volume(VOLUME)
+    # pg.mixer.music.play(-1)
+
     window.blit(field_surface, FIELD_COORDS)
     window.blit(info_surface, NEXT_COORDS)
     window.blit(score_surface, SCORE_COORDS)
@@ -115,19 +130,11 @@ if __name__ == "__main__":
     # setup
     pg.init()
     window = pg.display.set_mode(WINDOW_SIZE)
-    window.fill(BG_COLOUR)
     field_surface = pg.Surface(FIELD_SIZE)
-    field_surface.fill(EMPTY_COLOUR)
     info_surface = pg.Surface(NEXT_SIZE)
-    info_surface.fill(GRID_COLOUR)
     score_surface = pg.Surface(SCORE_SIZE)
-    score_surface.fill(GRID_COLOUR)
     hold_surface = pg.Surface(HOLD_SIZE)
-    hold_surface.fill(GRID_COLOUR)
-
-    # pg.mixer.music.load(MUSIC_FILE)
-    # pg.mixer.music.set_volume(VOLUME)
-    # pg.mixer.music.play(-1)
+    setup_surfaces()
 
     window_open = True
 
@@ -139,6 +146,8 @@ if __name__ == "__main__":
     next_move = FPS
     place_cd = 0
     score = 0
+    held = None
+    used_hold = False
     update_score(0)
 
     while window_open:
@@ -158,6 +167,7 @@ if __name__ == "__main__":
                     case pg.K_SPACE:
                         cur_piece.hard_drop()
                         window_open = next_piece()
+                        used_hold = False
                         next_move = FPS
                     case pg.K_x | pg.K_UP:
                         cur_piece.rotate_right()
@@ -166,7 +176,17 @@ if __name__ == "__main__":
                         cur_piece.rotate_left()
                         place_cd = FPS // 2
                     case pg.K_c:
-                        pass  # TODO: hold
+                        if not used_hold:
+                            used_hold = True
+                            if held is None:
+                                held = cur_piece
+                                cur_piece = tet.num_to_piece(field, selector.next())
+                                update_held()
+                            else:
+                                held, cur_piece = cur_piece, held
+                                cur_piece.__init__(field)
+                                update_held()
+                                next_move = FPS
 
         next_move -= speed
         if place_cd > 0:
@@ -175,7 +195,10 @@ if __name__ == "__main__":
             next_move = FPS
             if not cur_piece.drop() and place_cd <= 0:
                 window_open = next_piece()
+                used_hold = False
 
         update_field()
-        blit_surfaces()
+        window.blit(field_surface, FIELD_COORDS)
+
+        pg.display.flip()
         pg.time.Clock().tick(FPS)
