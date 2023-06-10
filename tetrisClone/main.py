@@ -14,7 +14,7 @@ NEXT_SIZE = 150, 350
 NEXT_COORDS = 555, 20
 SCORE_SIZE = 150, 100
 SCORE_COORDS = 15, 20
-HOLD_SIZE = 150, 200
+HOLD_SIZE = 150, 140
 HOLD_COORDS = 15, 150
 
 pg.font.init()
@@ -93,8 +93,25 @@ def update_field():
     draw_grid()
 
 
-def update_held():
-    pass
+def draw_graphic_on(surface, colour, size, coords, offset):
+    for x, y in coords:
+        x = x * size + offset[0]
+        y = y * size + FONT_SIZE + offset[1]
+        pg.draw.rect(surface, (0, 0, 0), pg.Rect(x, y, size, size))
+        pg.draw.rect(surface, colour, pg.Rect(x + 2, y + 2, size - 4, size - 4))
+
+
+def update_hold_surface():
+    hold_surface.fill(GRID_COLOUR)
+    static_text = FONT.render("HOLD:", True, TEXT_COLOUR)
+    if held is not None:
+        if type(held) == tet.IPiece or type(held) == tet.OPiece:
+            offset = (HOLD_SIZE[0] // 8.5, HOLD_SIZE[1] // 8)
+        else:
+            offset = (HOLD_SIZE[0] // 4.5, HOLD_SIZE[1] // 8)
+        draw_graphic_on(hold_surface, held.get_colour(), SQUARE_SIZE // 1.2, held.get_default_piece_positions(), offset)
+    hold_surface.blit(static_text, (25, 10))
+    window.blit(hold_surface, HOLD_COORDS)
 
 
 def update_score(x):
@@ -149,6 +166,7 @@ if __name__ == "__main__":
     held = None
     used_hold = False
     update_score(0)
+    update_hold_surface()
 
     while window_open:
         for event in pg.event.get():
@@ -179,14 +197,12 @@ if __name__ == "__main__":
                         if not used_hold:
                             used_hold = True
                             if held is None:
-                                held = cur_piece
-                                cur_piece = tet.num_to_piece(field, selector.next())
-                                update_held()
+                                held, cur_piece = cur_piece, tet.num_to_piece(field, selector.next())
                             else:
                                 held, cur_piece = cur_piece, held
                                 cur_piece.__init__(field)
-                                update_held()
-                                next_move = FPS
+                            update_hold_surface()
+                            next_move = FPS
 
         next_move -= speed
         if place_cd > 0:

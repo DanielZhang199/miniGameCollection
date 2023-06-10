@@ -200,6 +200,10 @@ class IPiece(Piece):
     def get_colour():
         return 1, 237, 250  # Cyan
 
+    @staticmethod
+    def get_default_piece_positions():
+        return (0, 1), (1, 1), (2, 1), (3, 1)
+
 
 class ZPiece(Piece):
     def __init__(self, pf):
@@ -225,6 +229,10 @@ class ZPiece(Piece):
     @staticmethod
     def get_colour():
         return 253, 63, 89  # Salmon
+
+    @staticmethod
+    def get_default_piece_positions():
+        return (0, 0), (1, 0), (1, 1), (2, 1)
 
 
 class SPiece(Piece):
@@ -252,6 +260,10 @@ class SPiece(Piece):
     def get_colour():
         return 83, 218, 63  # Green
 
+    @staticmethod
+    def get_default_piece_positions():
+        return (0, 1), (1, 0), (1, 1), (2, 0)
+
 
 class TPiece(Piece):
     def __init__(self, pf):
@@ -277,6 +289,10 @@ class TPiece(Piece):
     @staticmethod
     def get_colour():
         return 221, 10, 178  # Purple
+
+    @staticmethod
+    def get_default_piece_positions():
+        return (0, 1), (1, 0), (1, 1), (2, 1)
 
 
 class LPiece(Piece):
@@ -304,6 +320,10 @@ class LPiece(Piece):
     def get_colour():
         return 255, 200, 46  # Orange
 
+    @staticmethod
+    def get_default_piece_positions():
+        return (0, 1), (2, 0), (1, 1), (2, 1)
+
 
 class JPiece(Piece):
     def __init__(self, pf):
@@ -330,6 +350,10 @@ class JPiece(Piece):
     def get_colour():
         return 0, 119, 211  # Blue
 
+    @staticmethod
+    def get_default_piece_positions():
+        return (0, 1), (0, 0), (1, 1), (2, 1)
+
 
 class OPiece(Piece):
     def __init__(self, pf):
@@ -353,6 +377,10 @@ class OPiece(Piece):
     @staticmethod
     def get_colour():
         return 254, 251, 52  # Yellow
+
+    @staticmethod
+    def get_default_piece_positions():
+        return (1, 0), (2, 0), (1, 1), (2, 1)
 
 
 if __name__ == "__main__":
