@@ -131,6 +131,10 @@ class Piece:
     def get_colour():
         raise NotImplementedError("Subclass did not implement get_colour method")
 
+    @staticmethod
+    def default_piece_positions():
+        raise NotImplementedError("Subclass did not implement default_piece_positions method")
+
     def _get_rotation_coords(self, order):
         raise NotImplementedError("Subclass did not implement _try_place method")
 
@@ -201,7 +205,7 @@ class IPiece(Piece):
         return 1, 237, 250  # Cyan
 
     @staticmethod
-    def get_default_piece_positions():
+    def default_piece_positions():
         return (0, 1), (1, 1), (2, 1), (3, 1)
 
 
@@ -231,7 +235,7 @@ class ZPiece(Piece):
         return 253, 63, 89  # Salmon
 
     @staticmethod
-    def get_default_piece_positions():
+    def default_piece_positions():
         return (0, 0), (1, 0), (1, 1), (2, 1)
 
 
@@ -261,7 +265,7 @@ class SPiece(Piece):
         return 83, 218, 63  # Green
 
     @staticmethod
-    def get_default_piece_positions():
+    def default_piece_positions():
         return (0, 1), (1, 0), (1, 1), (2, 0)
 
 
@@ -291,7 +295,7 @@ class TPiece(Piece):
         return 221, 10, 178  # Purple
 
     @staticmethod
-    def get_default_piece_positions():
+    def default_piece_positions():
         return (0, 1), (1, 0), (1, 1), (2, 1)
 
 
@@ -321,7 +325,7 @@ class LPiece(Piece):
         return 255, 200, 46  # Orange
 
     @staticmethod
-    def get_default_piece_positions():
+    def default_piece_positions():
         return (0, 1), (2, 0), (1, 1), (2, 1)
 
 
@@ -351,7 +355,7 @@ class JPiece(Piece):
         return 0, 119, 211  # Blue
 
     @staticmethod
-    def get_default_piece_positions():
+    def default_piece_positions():
         return (0, 1), (0, 0), (1, 1), (2, 1)
 
 
@@ -379,7 +383,7 @@ class OPiece(Piece):
         return 254, 251, 52  # Yellow
 
     @staticmethod
-    def get_default_piece_positions():
+    def default_piece_positions():
         return (1, 0), (2, 0), (1, 1), (2, 1)
 
 

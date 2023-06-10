@@ -16,6 +16,7 @@ SCORE_SIZE = 150, 100
 SCORE_COORDS = 15, 20
 HOLD_SIZE = 150, 140
 HOLD_COORDS = 15, 150
+MARGIN = 10
 
 pg.font.init()
 FONT_SIZE = 45
@@ -93,12 +94,13 @@ def update_field():
     draw_grid()
 
 
-def draw_graphic_on(surface, colour, size, coords, offset):
+def draw_graphic_on(surface, colour, size, coords, offset, border):
     for x, y in coords:
         x = x * size + offset[0]
         y = y * size + FONT_SIZE + offset[1]
-        pg.draw.rect(surface, (0, 0, 0), pg.Rect(x, y, size, size))
-        pg.draw.rect(surface, colour, pg.Rect(x + 2, y + 2, size - 4, size - 4))
+        if border > 0:
+            pg.draw.rect(surface, (0, 0, 0), pg.Rect(x, y, size, size))
+        pg.draw.rect(surface, colour, pg.Rect(x + border, y + border, size - border * 2, size - border * 2))
 
 
 def update_hold_surface():
@@ -109,8 +111,8 @@ def update_hold_surface():
             offset = (HOLD_SIZE[0] // 8.5, HOLD_SIZE[1] // 8)
         else:
             offset = (HOLD_SIZE[0] // 4.5, HOLD_SIZE[1] // 8)
-        draw_graphic_on(hold_surface, held.get_colour(), SQUARE_SIZE // 1.2, held.get_default_piece_positions(), offset)
-    hold_surface.blit(static_text, (25, 10))
+        draw_graphic_on(hold_surface, held.get_colour(), SQUARE_SIZE // 1.2, held.default_piece_positions(), offset, 2)
+    hold_surface.blit(static_text, (25, MARGIN))
     window.blit(hold_surface, HOLD_COORDS)
 
 
@@ -120,7 +122,7 @@ def update_score(x):
     static_text = FONT.render("SCORE:", True, TEXT_COLOUR)
     score_text = FONT.render(str(x * 100), True, TEXT_COLOUR)
     score_x_pos = SCORE_SIZE[0] - score_text.get_rect().width - 5
-    score_surface.blit(static_text, (15, 5))
+    score_surface.blit(static_text, (15, MARGIN))
     score_surface.blit(score_text, (score_x_pos, FONT_SIZE + 10))
     window.blit(score_surface, SCORE_COORDS)
 
@@ -164,7 +166,7 @@ if __name__ == "__main__":
     place_cd = 0
     score = 0
     held = None
-    used_hold = False
+    used_hold = 0
     update_score(0)
     update_hold_surface()
 
@@ -194,8 +196,8 @@ if __name__ == "__main__":
                         cur_piece.rotate_left()
                         place_cd = FPS // 2
                     case pg.K_c:
-                        if not used_hold:
-                            used_hold = True
+                        if not used_hold == 2:
+                            used_hold += 1
                             if held is None:
                                 held, cur_piece = cur_piece, tet.num_to_piece(field, selector.next())
                             else:
@@ -211,7 +213,7 @@ if __name__ == "__main__":
             next_move = FPS
             if not cur_piece.drop() and place_cd <= 0:
                 window_open = next_piece()
-                used_hold = False
+                used_hold = 0
 
         update_field()
         window.blit(field_surface, FIELD_COORDS)
