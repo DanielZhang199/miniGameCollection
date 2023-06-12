@@ -131,10 +131,12 @@ def update_next():
     next_pieces = selector.show_next_n(6)
     for i, piece_num in enumerate(next_pieces):
         p_type = tet.num_to_piece(piece_num)
-        if type(p_type) == tet.IPiece or type(p_type) == tet.OPiece:
-            offset = (NEXT_SIZE[0] // 8.5, NEXT_SIZE[1] // 7 * i + 20)
+        if p_type == tet.IPiece:
+            offset = (NEXT_SIZE[0] // 5, NEXT_SIZE[1] // 7 * i + 10)
+        elif p_type == tet.OPiece:
+            offset = (NEXT_SIZE[0] // 5, NEXT_SIZE[1] // 7 * i + 20)
         else:
-            offset = (NEXT_SIZE[0] // 4.5, NEXT_SIZE[1] // 7 * i + 20)
+            offset = (NEXT_SIZE[0] // 3.5, NEXT_SIZE[1] // 7 * i + 20)
         draw_graphic_on(next_piece_surface, p_type.get_colour(), SQUARE_SIZE // 1.5, p_type.default_piece_positions(),
                         offset, 1)
     next_piece_surface.blit(static_text, (30, MARGIN))

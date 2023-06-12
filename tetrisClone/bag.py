@@ -1,11 +1,11 @@
 from random import shuffle
 
-PIECES = [i for i in range(7)] * 2
+PIECES = [i for i in range(7)]
 
 
 class Bag:
     """
-    Class to cycle through 7 numbers in a pseudo-random order. This is an implementation of the tetris 14-bag
+    Class to cycle through 7 numbers in a pseudo-random order. This is an implementation of the tetris 7-bag
     """
     def __init__(self):
         temp1 = PIECES.copy()
