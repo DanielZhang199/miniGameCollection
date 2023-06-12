@@ -119,9 +119,9 @@ def update_score(x):
     score_surface.fill(GRID_COLOUR)
     static_text = FONT.render("SCORE:", True, TEXT_COLOUR)
     score_text = FONT.render(str(x * 100), True, TEXT_COLOUR)
-    score_x_pos = SCORE_SIZE[0] - score_text.get_rect().width - 5
+    score_x_pos = SCORE_SIZE[0] - score_text.get_rect().width - MARGIN
     score_surface.blit(static_text, (15, MARGIN))
-    score_surface.blit(score_text, (score_x_pos, FONT_SIZE + 10))
+    score_surface.blit(score_text, (score_x_pos, FONT_SIZE + MARGIN))
     window.blit(score_surface, SCORE_COORDS)
 
 
@@ -137,7 +137,7 @@ def update_next():
             offset = (NEXT_SIZE[0] // 4.5, NEXT_SIZE[1] // 7 * i + 20)
         draw_graphic_on(next_piece_surface, p_type.get_colour(), SQUARE_SIZE // 1.5, p_type.default_piece_positions(),
                         offset, 1)
-    next_piece_surface.blit(static_text, (15, MARGIN))
+    next_piece_surface.blit(static_text, (30, MARGIN))
     window.blit(next_piece_surface, NEXT_COORDS)
 
 
