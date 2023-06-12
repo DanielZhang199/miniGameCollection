@@ -10,7 +10,7 @@ FIELD_COORDS = 185, 10
 FIELD_SIZE = 350, 700
 GRID_DIMENSIONS = Playfield.get_dimensions()
 GRID_WIDTH = 4
-NEXT_SIZE = 150, 350
+NEXT_SIZE = 150, 500
 NEXT_COORDS = 555, 20
 SCORE_SIZE = 150, 100
 SCORE_COORDS = 15, 20
@@ -71,17 +71,14 @@ def draw_piece(piece: tet.Piece):
         draw_block(x, y, colour)
 
 
-def display_next(pieces):
-    pass
-
-
 def next_piece():
     global cur_piece, score
     score += cur_piece.place()
     update_score(score)
     if field.garbage_out():
         return False
-    cur_piece = tet.num_to_piece(field, selector.next())
+    cur_piece = tet.num_to_piece(selector.next())(field)
+    update_next()
     cur_piece.drop()
     return True
 
@@ -92,6 +89,7 @@ def update_field():
     draw_field(field)
     draw_piece(cur_piece)
     draw_grid()
+    window.blit(field_surface, FIELD_COORDS)
 
 
 def draw_graphic_on(surface, colour, size, coords, offset, border):
@@ -106,7 +104,7 @@ def draw_graphic_on(surface, colour, size, coords, offset, border):
 def update_hold_surface():
     hold_surface.fill(GRID_COLOUR)
     static_text = FONT.render("HOLD:", True, TEXT_COLOUR)
-    if held is not None:
+    if held is not None:  # so it doesn't crash randomly
         if type(held) == tet.IPiece or type(held) == tet.OPiece:
             offset = (HOLD_SIZE[0] // 8.5, HOLD_SIZE[1] // 8)
         else:
@@ -127,48 +125,59 @@ def update_score(x):
     window.blit(score_surface, SCORE_COORDS)
 
 
-def setup_surfaces():
+def update_next():
+    next_piece_surface.fill(GRID_COLOUR)
+    static_text = FONT.render("NEXT:", True, TEXT_COLOUR)
+    next_pieces = selector.show_next_n(6)
+    for i, piece_num in enumerate(next_pieces):
+        p_type = tet.num_to_piece(piece_num)
+        if type(p_type) == tet.IPiece or type(p_type) == tet.OPiece:
+            offset = (NEXT_SIZE[0] // 8.5, NEXT_SIZE[1] // 7 * i + 20)
+        else:
+            offset = (NEXT_SIZE[0] // 4.5, NEXT_SIZE[1] // 7 * i + 20)
+        draw_graphic_on(next_piece_surface, p_type.get_colour(), SQUARE_SIZE // 1.5, p_type.default_piece_positions(),
+                        offset, 1)
+    next_piece_surface.blit(static_text, (15, MARGIN))
+    window.blit(next_piece_surface, NEXT_COORDS)
+
+
+def setup():
+    pg.init()
     window.fill(BG_COLOUR)
     field_surface.fill(EMPTY_COLOUR)
-    info_surface.fill(GRID_COLOUR)
+    next_piece_surface.fill(GRID_COLOUR)
     score_surface.fill(GRID_COLOUR)
     hold_surface.fill(GRID_COLOUR)
 
-    # pg.mixer.music.load(MUSIC_FILE)
-    # pg.mixer.music.set_volume(VOLUME)
-    # pg.mixer.music.play(-1)
+    pg.mixer.music.load(MUSIC_FILE)
+    pg.mixer.music.set_volume(VOLUME)
+    pg.mixer.music.play(-1)
 
-    window.blit(field_surface, FIELD_COORDS)
-    window.blit(info_surface, NEXT_COORDS)
-    window.blit(score_surface, SCORE_COORDS)
-    window.blit(hold_surface, HOLD_COORDS)
+    update_score(0)
+    update_hold_surface()
+    update_next()
     pg.display.flip()
 
 
 if __name__ == "__main__":
-    # setup
-    pg.init()
+    # setup global variables
     window = pg.display.set_mode(WINDOW_SIZE)
     field_surface = pg.Surface(FIELD_SIZE)
-    info_surface = pg.Surface(NEXT_SIZE)
+    next_piece_surface = pg.Surface(NEXT_SIZE)
     score_surface = pg.Surface(SCORE_SIZE)
     hold_surface = pg.Surface(HOLD_SIZE)
-    setup_surfaces()
-
     window_open = True
-
     selector = Bag()
     field = Playfield()
-    cur_piece = tet.num_to_piece(field, selector.next())
-
+    cur_piece = tet.num_to_piece(selector.next())(field)
     speed = 1
     next_move = FPS
     place_cd = 0
     score = 0
     held = None
     used_hold = 0
-    update_score(0)
-    update_hold_surface()
+
+    setup()
 
     while window_open:
         for event in pg.event.get():
@@ -199,7 +208,8 @@ if __name__ == "__main__":
                         if not used_hold == 2:
                             used_hold += 1
                             if held is None:
-                                held, cur_piece = cur_piece, tet.num_to_piece(field, selector.next())
+                                held, cur_piece = cur_piece, tet.num_to_piece(selector.next())(field)
+                                update_next()
                             else:
                                 held, cur_piece = cur_piece, held
                                 cur_piece.__init__(field)
@@ -216,7 +226,6 @@ if __name__ == "__main__":
                 used_hold = 0
 
         update_field()
-        window.blit(field_surface, FIELD_COORDS)
 
         pg.display.flip()
         pg.time.Clock().tick(FPS)

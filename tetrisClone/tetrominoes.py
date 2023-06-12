@@ -10,27 +10,28 @@ I_WALL_KICK_DATA = {"0>1": ((-2, 0), (1, 0), (-2, -1), (1, 2)), "1>0": ((2, 0), 
                     "3>0": ((1, 0), (-2, 0), (1, -2), (-2, 1)), "0>3": ((-1, 0), (2, 0), (-1, 2), (2, -1))}
 
 
-def num_to_piece(pf: Playfield, n: int):
+def num_to_piece(n: int):
     """
     turns the number given by the bag into a piece object
     :param pf: current board; part of piece constructor
     :param n: output from bag (integer between 0-6)
-    :return: Piece object
+    :return: (type) type of piece
     """
-    if n == 0:
-        return TPiece(pf)
-    elif n == 1:
-        return IPiece(pf)
-    elif n == 2:
-        return JPiece(pf)
-    elif n == 3:
-        return LPiece(pf)
-    elif n == 4:
-        return ZPiece(pf)
-    elif n == 5:
-        return SPiece(pf)
-    else:
-        return OPiece(pf)
+    match n:
+        case 0:
+            return TPiece
+        case 1:
+            return IPiece
+        case 2:
+            return JPiece
+        case 3:
+            return LPiece
+        case 4:
+            return ZPiece
+        case 5:
+            return SPiece
+        case 6:
+            return OPiece
 
 
 class Piece:
