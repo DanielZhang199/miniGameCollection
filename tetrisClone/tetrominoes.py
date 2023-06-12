@@ -1,9 +1,9 @@
 from tetrisClone.playfield import Playfield
 
-JLTSZ_WALL_KICK_DATA = {"0>1": ((-1, 0), (-1, 1), (0, -2), (-1, -2)), "1>0": ((1, 0), (1, -1), (0, 2), (1, 2)),
-                        "1>2": ((1, 0), (1, -1), (0, 2), (1, 2)), "2>1": ((-1, 0), (-1, 1), (0, -2), (-1, -2)),
-                        "2>3": ((1, 0), (1, 1), (0, -2), (1, -2)), "3>2": ((-1, 0), (-1, -1), (0, 2), (-1, 2)),
-                        "3>0": ((-1, 0), (-1, -1), (0, 2), (-1, 2)), "0>3": ((1, 0), (1, 1), (0, -2), (1, -2))}
+DEFAULT_WALL_KICK_DATA = {"0>1": ((-1, 0), (-1, 1), (0, -2), (-1, -2)), "1>0": ((1, 0), (1, -1), (0, 2), (1, 2)),
+                          "1>2": ((1, 0), (1, -1), (0, 2), (1, 2)), "2>1": ((-1, 0), (-1, 1), (0, -2), (-1, -2)),
+                          "2>3": ((1, 0), (1, 1), (0, -2), (1, -2)), "3>2": ((-1, 0), (-1, -1), (0, 2), (-1, 2)),
+                          "3>0": ((-1, 0), (-1, -1), (0, 2), (-1, 2)), "0>3": ((1, 0), (1, 1), (0, -2), (1, -2))}
 I_WALL_KICK_DATA = {"0>1": ((-2, 0), (1, 0), (-2, -1), (1, 2)), "1>0": ((2, 0), (-1, 0), (2, 1), (-1, -2)),
                     "1>2": ((-1, 0), (2, 0), (-1, 2), (2, -1)), "2>1": ((1, 0), (-2, 0), (1, -2), (-2, 1)),
                     "2>3": ((2, 0), (-1, 0), (2, 1), (-1, -2)), "3>2": ((-2, 0), (1, 0), (-2, -1), (1, 2)),
@@ -13,7 +13,6 @@ I_WALL_KICK_DATA = {"0>1": ((-2, 0), (1, 0), (-2, -1), (1, 2)), "1>0": ((2, 0), 
 def num_to_piece(n: int):
     """
     turns the number given by the bag into a piece object
-    :param pf: current board; part of piece constructor
     :param n: output from bag (integer between 0-6)
     :return: (type) type of piece
     """
@@ -173,7 +172,7 @@ class Piece:
         return [[self._corner[0] + x, self._corner[1] - y] for x, y in coords]
 
     def _get_kicks(self, orientation):
-        return JLTSZ_WALL_KICK_DATA[str(self._rotation) + ">" + str(orientation)]
+        return DEFAULT_WALL_KICK_DATA[str(self._rotation) + ">" + str(orientation)]
 
 
 class IPiece(Piece):
@@ -394,7 +393,7 @@ if __name__ == "__main__":
 
     playfield = Playfield()
     for i in range(10):
-        piece = num_to_piece(playfield, piece_bag.next())
+        piece = num_to_piece(piece_bag.next())(playfield)
         print(piece.get_colour())
         print(type(piece))
 
