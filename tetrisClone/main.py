@@ -4,7 +4,7 @@ from playfield import Playfield
 import tetrominoes as tet
 
 WINDOW_SIZE = 720, 720
-FPS = 30
+FPS = 60
 SQUARE_SIZE = 35
 FIELD_COORDS = 185, 10
 FIELD_SIZE = 350, 700
@@ -12,10 +12,10 @@ GRID_DIMENSIONS = Playfield.get_dimensions()
 GRID_WIDTH = 4
 NEXT_SIZE = 150, 500
 NEXT_COORDS = 555, 20
-SCORE_SIZE = 150, 100
+SCORE_SIZE = 150, 200
 SCORE_COORDS = 15, 20
 HOLD_SIZE = 150, 140
-HOLD_COORDS = 15, 150
+HOLD_COORDS = 15, 250
 MARGIN = 10
 
 pg.font.init()
@@ -83,11 +83,10 @@ def next_piece():
         global score, level, lines_to_next_level
         lines_to_next_level -= lines_cleared
         score += SCORING_BASE_VALUES[lines_cleared - 1] * level
-        update_score(score)
+        update_score(score, level)
         if lines_to_next_level <= 0:
-            lines_to_next_level += 10
             level += 1
-            print(level)
+            lines_to_next_level += 5 * level
 
     if field.garbage_out():
         return False
@@ -128,14 +127,19 @@ def update_hold_surface():
     window.blit(hold_surface, HOLD_COORDS)
 
 
-def update_score(x):
-    # changes score display to x
+def update_score(score, level):
+    # updates score and level counter surface
     score_surface.fill(GRID_COLOUR)
-    static_text = FONT.render("SCORE:", True, TEXT_COLOUR)
-    score_text = FONT.render(str(x), True, TEXT_COLOUR)
+    static_text_1 = FONT.render("SCORE:", True, TEXT_COLOUR)
+    static_text_2 = FONT.render("LEVEL:", True, TEXT_COLOUR)
+    score_text = FONT.render(str(score), True, TEXT_COLOUR)
+    level_text = FONT.render(str(level), True, TEXT_COLOUR)
     score_x_pos = SCORE_SIZE[0] - score_text.get_rect().width - MARGIN
-    score_surface.blit(static_text, (15, MARGIN))
+    level_x_pos = SCORE_SIZE[0] - level_text.get_rect().width - MARGIN
+    score_surface.blit(static_text_1, (15, MARGIN))
     score_surface.blit(score_text, (score_x_pos, FONT_SIZE + MARGIN))
+    score_surface.blit(static_text_2, (15, (FONT_SIZE + MARGIN) * 2))
+    score_surface.blit(level_text, (level_x_pos, FONT_SIZE * 3 + MARGIN * 2))
     window.blit(score_surface, SCORE_COORDS)
 
 
@@ -169,7 +173,7 @@ def setup():
     pg.mixer.music.set_volume(VOLUME)
     pg.mixer.music.play(-1)
 
-    update_score(0)
+    update_score(score, level)
     update_hold_surface()
     update_next()
     pg.display.flip()
@@ -192,7 +196,7 @@ if __name__ == "__main__":
     score = 0
     held = None
     used_hold = 0
-    lines_to_next_level = 0
+    lines_to_next_level = 5
 
     setup()
 
