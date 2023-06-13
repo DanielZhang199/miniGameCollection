@@ -4,7 +4,7 @@ from playfield import Playfield
 import tetrominoes as tet
 
 WINDOW_SIZE = 720, 720
-FPS = 10
+FPS = 30
 SQUARE_SIZE = 35
 FIELD_COORDS = 185, 10
 FIELD_SIZE = 350, 700
@@ -29,6 +29,7 @@ EMPTY_COLOUR = (10,) * 3
 
 MUSIC_FILE = "TetrisTheme.ogg"
 VOLUME = 0.1
+SCORING_BASE_VALUES = (40, 100, 300, 1200)
 
 
 def draw_field(pf: Playfield):
@@ -72,9 +73,22 @@ def draw_piece(piece: tet.Piece):
 
 
 def next_piece():
-    global cur_piece, score
-    score += cur_piece.place()
-    update_score(score)
+    """
+    this subroutine is probably not best code design, but I don't really care at this point.
+    :return: (whether the game is over or not)
+    """
+    global cur_piece
+    lines_cleared = cur_piece.place()
+    if 0 < lines_cleared <= 4:
+        global score, level, lines_to_next_level
+        lines_to_next_level -= lines_cleared
+        score += SCORING_BASE_VALUES[lines_cleared - 1] * level
+        update_score(score)
+        if lines_to_next_level <= 0:
+            lines_to_next_level += 10
+            level += 1
+            print(level)
+
     if field.garbage_out():
         return False
     cur_piece = tet.num_to_piece(selector.next())(field)
@@ -118,7 +132,7 @@ def update_score(x):
     # changes score display to x
     score_surface.fill(GRID_COLOUR)
     static_text = FONT.render("SCORE:", True, TEXT_COLOUR)
-    score_text = FONT.render(str(x * 100), True, TEXT_COLOUR)
+    score_text = FONT.render(str(x), True, TEXT_COLOUR)
     score_x_pos = SCORE_SIZE[0] - score_text.get_rect().width - MARGIN
     score_surface.blit(static_text, (15, MARGIN))
     score_surface.blit(score_text, (score_x_pos, FONT_SIZE + MARGIN))
@@ -172,12 +186,13 @@ if __name__ == "__main__":
     selector = Bag()
     field = Playfield()
     cur_piece = tet.num_to_piece(selector.next())(field)
-    speed = 1
+    level = 1
     next_move = FPS
     place_cd = 0
     score = 0
     held = None
     used_hold = 0
+    lines_to_next_level = 0
 
     setup()
 
@@ -218,7 +233,7 @@ if __name__ == "__main__":
                             update_hold_surface()
                             next_move = FPS
 
-        next_move -= speed
+        next_move -= level
         if place_cd > 0:
             place_cd -= 1
         if next_move <= 0:
