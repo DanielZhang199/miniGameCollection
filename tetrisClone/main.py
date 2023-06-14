@@ -83,7 +83,7 @@ def next_piece():
         global score, level, lines_to_next_level
         lines_to_next_level -= lines_cleared
         score += SCORING_BASE_VALUES[lines_cleared - 1] * level
-        update_score(score, level)
+        update_score()
         if lines_to_next_level <= 0:
             level += 1
             lines_to_next_level += 5 * level
@@ -127,8 +127,8 @@ def update_hold_surface():
     window.blit(hold_surface, HOLD_COORDS)
 
 
-def update_score(score, level):
-    # updates score and level counter surface
+def update_score():
+    # updates score and level counter surface using the globally defined values
     score_surface.fill(GRID_COLOUR)
     static_text_1 = FONT.render("SCORE:", True, TEXT_COLOUR)
     static_text_2 = FONT.render("LEVEL:", True, TEXT_COLOUR)
@@ -173,7 +173,7 @@ def setup():
     pg.mixer.music.set_volume(VOLUME)
     pg.mixer.music.play(-1)
 
-    update_score(score, level)
+    update_score()
     update_hold_surface()
     update_next()
     pg.display.flip()
