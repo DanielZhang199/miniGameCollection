@@ -64,14 +64,10 @@ class Piece:
     def _get_kicks(self, orientation):
         return DEFAULT_WALL_KICK_DATA[str(self._rotation) + ">" + str(orientation)]
 
-    # abstract methods (not defied for generic piece)
+    # abstract getter methods (called by methods in this class)
     @staticmethod
     def get_colour():
         raise NotImplementedError("Subclass did not implement get_colour method")
-
-    @staticmethod
-    def default_piece_positions():
-        raise NotImplementedError("Subclass did not implement default_piece_positions method")
 
     def _get_rotation_coords(self, order):
         raise NotImplementedError("Subclass did not implement _try_place method")
@@ -240,7 +236,7 @@ class IPiece(Piece):
         return 1, 237, 250  # Cyan
 
     # next method refers to relative coordinates of a piece in default rotation state. I.e. the line of coordinates of
-    # _get_rotation_coords corresponding to case 0. Needed for drawing the piece when it is not in play.
+    # _get_rotation_coords corresponding to case 0. Needed for drawing the piece when it is not in play in retrospect.
     @staticmethod
     def default_piece_positions():
         return (0, 1), (1, 1), (2, 1), (3, 1)
