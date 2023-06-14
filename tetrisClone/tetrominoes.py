@@ -12,7 +12,7 @@ I_WALL_KICK_DATA = {"0>1": ((-2, 0), (1, 0), (-2, -1), (1, 2)), "1>0": ((2, 0), 
 
 def num_to_piece(n: int):
     """
-    turns the number given by the bag into a piece object
+    turns the number given by the bag into a piece object class
     :param n: output from bag (integer between 0-6)
     :return: (type) type of piece
     """
@@ -34,22 +34,49 @@ def num_to_piece(n: int):
 
 
 class Piece:
+    """
+    class for abstract piece class with shared functionality
+
+    fields:
+    - coordinates: (list) of 4 x, y coordinates for each of the piece components
+    - corner: (list) position of top left corner of piece area (used for relative coordinates used for rotations)
+    - rotation: (int) 0-3 current rotation state of piece
+    - field: current playing field object
+    - placed: (boolean) whether the piece has been placed (just so it cannot be placed twice due to bad code)
+    """
     def __init__(self, pf: Playfield):
-        self._coordinates = None
         if type(self) is Piece:
             raise Exception('Piece is an abstract class and cannot be instantiated directly')
+        self._coordinates = None
         self._corner = [3, 21]  # x, y position of top left corner of 'hit-box' for rotations
         self._rotation = 0
         self._field = pf
         self._placed = False
         # all/most methods called on the piece will be with respect to the 'field', so it is also a field
 
+    # GETTER METHODS:
     def get_corner_position(self):
         return self._corner
 
     def get_coordinates(self):
         return self._coordinates
 
+    def _get_kicks(self, orientation):
+        return DEFAULT_WALL_KICK_DATA[str(self._rotation) + ">" + str(orientation)]
+
+    # abstract methods (not defied for generic piece)
+    @staticmethod
+    def get_colour():
+        raise NotImplementedError("Subclass did not implement get_colour method")
+
+    @staticmethod
+    def default_piece_positions():
+        raise NotImplementedError("Subclass did not implement default_piece_positions method")
+
+    def _get_rotation_coords(self, order):
+        raise NotImplementedError("Subclass did not implement _try_place method")
+
+    # SETTER METHODS
     def left(self):
         """
         moves piece one to the left if possible, otherwise this function does not do anything
@@ -64,7 +91,13 @@ class Piece:
         """
         self._move(1)
 
+    # in theory n will only be 1 or -1, but this still saves repeated code
     def _move(self, n):
+        """
+        moves piece n squares in positive or negative x direction (downwards would be a drop)
+        :param n: (int) how much x position can be changed
+        :return: nothing
+        """
         for coord in self._coordinates:
             if not self._field.is_clear(coord[0] + n, coord[1]):
                 return
@@ -74,7 +107,7 @@ class Piece:
 
     def drop(self):
         """
-        drops the piece by one, if piece can no longer move down, returns false, else returns true
+        drops the piece by one and returns true if the piece has space, if piece can no longer move, returns false
         :return: (boolean) true if piece was able to move
         """
         for coord in self._coordinates:
@@ -91,15 +124,15 @@ class Piece:
         :return: (int) lines cleared from placing that piece
         """
         if not self._placed:
-            score = self._field.add_blocks(self._coordinates, self.get_colour())
             self._placed = True
-            return score
-        return 0
+            return self._field.add_blocks(self._coordinates, self.get_colour())
+        return 0  # return zero anyways
 
     def hard_drop(self):
         """
-        calls drop over and over until it returns false
-        :return: nothing
+        calls drop over and over until it returns false. Not sure about the practicality, but this function is useful
+        abstraction regardless of necessity
+        :return: nothing (since we already know that the piece can't move further)
         """
         while self.drop():
             pass
@@ -113,7 +146,7 @@ class Piece:
             new_state = 0
         else:
             new_state = self._rotation + 1
-        self._perform_rotate(self._get_rotation_coords(new_state), new_state)
+        self._perform_rotate(new_state)
 
     def rotate_left(self):
         """
@@ -124,22 +157,18 @@ class Piece:
             new_state = 3
         else:
             new_state = self._rotation - 1
-        self._perform_rotate(self._get_rotation_coords(new_state), new_state)
-
-    # abstract methods
-    @staticmethod
-    def get_colour():
-        raise NotImplementedError("Subclass did not implement get_colour method")
-
-    @staticmethod
-    def default_piece_positions():
-        raise NotImplementedError("Subclass did not implement default_piece_positions method")
-
-    def _get_rotation_coords(self, order):
-        raise NotImplementedError("Subclass did not implement _try_place method")
+        self._perform_rotate(new_state)
 
     # shared helper methods
-    def _perform_rotate(self, coords, orientation):
+    def _perform_rotate(self, orientation):
+        """
+        attempts to put the piece into specified rotation state/orientation, setting the rotation state to that value
+        if the rotation attempt is successful. Rotation states are defined via the graphic (based on tetris guidelines)
+        and kicks are attempted as needed according to those guidelines.
+        :param orientation: (int) 0-3 orientation piece is attempting to rotation into
+        :return: (nothing)
+        """
+        coords = self._get_rotation_coords(orientation)
         if self._try_set_coords(coords):
             # helper function above sets coordinates, we only need to change rotation value
             self._rotation = orientation
@@ -150,9 +179,15 @@ class Piece:
                     self._rotation = orientation
                     self._corner[0] += dx
                     self._corner[1] += dy
-                    return
 
     def _try_set_coords(self, coords):
+        """
+        attempts to set the current coordinates to be replaced by new specified coordinates, if all new coordinates are
+        not in conflict with the current playing field, return true. Otherwise, do not change the coordinates and return
+        false.
+        :param coords: (list) of four sets of x, y coordinates
+        :return: (boolean) whether function was successful
+        """
         valid = True
         for x, y in coords:
             if not self._field.is_clear(x, y):
@@ -171,16 +206,16 @@ class Piece:
         """
         return [[self._corner[0] + x, self._corner[1] - y] for x, y in coords]
 
-    def _get_kicks(self, orientation):
-        return DEFAULT_WALL_KICK_DATA[str(self._rotation) + ">" + str(orientation)]
 
-
+# subclasses do not introduce new methods, and only implement or polymorph previously designed methods.
 class IPiece(Piece):
     def __init__(self, pf):
         super().__init__(pf)
-        # list of coordinates of each piece when spawning
+        # list of coordinates of each piece component when spawning
         self._coordinates = [[3, 20], [4, 20], [5, 20], [6, 20]]
 
+    # while this seems like a static method, the absolute coordinates after rotation are dependent on piece position
+    # in the playing field and therefore the function cannot be made completely static.
     def _get_rotation_coords(self, orientation):
         """
         gets the positions of pieces if tetromino was to rotate into specified position
@@ -197,13 +232,15 @@ class IPiece(Piece):
             case 3:
                 return self._abs_coords(((1, 0), (1, 1), (1, 2), (1, 3)))
 
-    def _get_kicks(self, orientation):
+    def _get_kicks(self, orientation):  # override for I piece
         return I_WALL_KICK_DATA[str(self._rotation) + ">" + str(orientation)]
 
     @staticmethod
     def get_colour():
         return 1, 237, 250  # Cyan
 
+    # next method refers to relative coordinates of a piece in default rotation state. I.e. the line of coordinates of
+    # _get_rotation_coords corresponding to case 0. Needed for drawing the piece when it is not in play.
     @staticmethod
     def default_piece_positions():
         return (0, 1), (1, 1), (2, 1), (3, 1)
