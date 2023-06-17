@@ -4,7 +4,7 @@ from playfield import Playfield
 import tetrominoes as tet
 
 WINDOW_SIZE = 720, 720
-FPS = 60
+FPS = 60  # should be multiple of 30 (but other speeds should work)
 SQUARE_SIZE = 35
 FIELD_COORDS = 185, 10
 FIELD_SIZE = 350, 700
@@ -21,7 +21,7 @@ MARGIN = 10
 pg.font.init()
 FONT_SIZE = 45
 FONT = pg.font.SysFont('Lucon.ttf', FONT_SIZE)
-TEXT_COLOUR = (255, ) * 3
+TEXT_COLOUR = (255,) * 3
 
 BG_COLOUR = (95,) * 3
 GRID_COLOUR = (30,) * 3
@@ -86,7 +86,7 @@ def next_piece():
         update_score()
         if lines_to_next_level <= 0:
             level += 1
-            lines_to_next_level += 5 * level
+            lines_to_next_level += get_lines_to_next_level()
 
     if field.garbage_out():
         return False
@@ -179,6 +179,17 @@ def setup():
     pg.display.flip()
 
 
+def get_new_next_move_val():
+    # return either FPS - level * FPS // 15 (linear decrease from 1 second to 0 seconds over 15 levels)
+    # or minimum of 2/30ths of a second, but exact time will depend on FPS
+    # while levels can exceed 15, the actual speed will never exceed that of level 15 (levels start at 1)
+    return max(FPS - (level - 1) * FPS // 15, FPS // 15)
+
+
+def get_lines_to_next_level():
+    return 5 + (level - 1) * 10
+
+
 if __name__ == "__main__":
     # setup global variables
     window = pg.display.set_mode(WINDOW_SIZE)
@@ -191,12 +202,12 @@ if __name__ == "__main__":
     field = Playfield()
     cur_piece = tet.num_to_piece(selector.next())(field)
     level = 1
-    next_move = FPS
+    next_move = get_new_next_move_val()
     place_cd = 0
     score = 0
     held = None
     used_hold = 0
-    lines_to_next_level = 5
+    lines_to_next_level = get_lines_to_next_level()
 
     setup()
 
@@ -207,24 +218,24 @@ if __name__ == "__main__":
             elif event.type == pg.KEYDOWN:
                 match event.key:
                     case pg.K_LEFT:
-                        cur_piece.left()
-                        place_cd = FPS // 2
+                        if cur_piece.left():
+                            place_cd = FPS // 4
                     case pg.K_RIGHT:
-                        cur_piece.right()
-                        place_cd = FPS // 2
+                        if cur_piece.right():
+                            place_cd = FPS // 4
                     case pg.K_DOWN:
                         cur_piece.drop()
                     case pg.K_SPACE:
                         cur_piece.hard_drop()
                         window_open = next_piece()
                         used_hold = False
-                        next_move = FPS
+                        next_move = get_new_next_move_val()
                     case pg.K_x | pg.K_UP:
                         cur_piece.rotate_right()
-                        place_cd = FPS // 2
+                        place_cd = get_new_next_move_val()
                     case pg.K_z:
                         cur_piece.rotate_left()
-                        place_cd = FPS // 2
+                        place_cd = get_new_next_move_val()
                     case pg.K_c:
                         if not used_hold == 2:
                             used_hold += 1
@@ -235,13 +246,13 @@ if __name__ == "__main__":
                                 held, cur_piece = cur_piece, held
                                 cur_piece.__init__(field)
                             update_hold_surface()
-                            next_move = FPS
+                            next_move = get_new_next_move_val()
 
-        next_move -= level
+        next_move -= 1
         if place_cd > 0:
             place_cd -= 1
         if next_move <= 0:
-            next_move = FPS
+            next_move = get_new_next_move_val()
             if not cur_piece.drop() and place_cd <= 0:
                 window_open = next_piece()
                 used_hold = 0

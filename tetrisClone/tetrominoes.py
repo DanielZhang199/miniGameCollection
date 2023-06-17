@@ -76,30 +76,31 @@ class Piece:
     def left(self):
         """
         moves piece one to the left if possible, otherwise this function does not do anything
-        :return: nothing
+        :return: (boolean) if the movement was successful
         """
-        self._move(-1)
+        return self._move(-1)
 
     def right(self):
         """
         moves piece one to the right if possible
-        :return: nothing
+        :return: (boolean) if the movement was successful
         """
-        self._move(1)
+        return self._move(1)
 
     # in theory n will only be 1 or -1, but this still saves repeated code
     def _move(self, n):
         """
         moves piece n squares in positive or negative x direction (downwards would be a drop)
         :param n: (int) how much x position can be changed
-        :return: nothing
+        :return: (boolean) if the movement was successful
         """
         for coord in self._coordinates:
             if not self._field.is_clear(coord[0] + n, coord[1]):
-                return
+                return False
         for coord in self._coordinates:
             coord[0] += n
         self._corner[0] += n
+        return True
 
     def drop(self):
         """
