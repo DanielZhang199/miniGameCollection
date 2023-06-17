@@ -134,6 +134,19 @@ class Piece:
         while self.drop():
             pass
 
+    def get_ghost_coords(self):
+        """
+        returns the coordinates of pieces as if the piece were to be hard dropped
+        :return:
+        """
+        copy = [coord.copy() for coord in self._coordinates]
+        while True:
+            for coord in copy:
+                if not self._field.is_clear(coord[0], coord[1] - 1):
+                    return copy
+            for coord in copy:
+                coord[1] -= 1
+
     def rotate_right(self):
         """
         tries to rotate the piece right (using the SRS algorithm)

@@ -30,6 +30,8 @@ EMPTY_COLOUR = (10,) * 3
 MUSIC_FILE = "TetrisTheme.ogg"
 VOLUME = 0.1
 SCORING_BASE_VALUES = (40, 100, 300, 1200)
+GHOST = True  # displays ghost of where piece will land
+GHOST_ALPHA = 50
 
 
 def draw_field(pf: Playfield):
@@ -41,6 +43,11 @@ def draw_field(pf: Playfield):
             contents = pf.get_contents(j, height - i - 1)
             if contents is not None:
                 draw_block(j, height - i - 1, contents)
+
+
+def draw_ghost(coords, colour):
+    for x, y in coords:
+        draw_block_transparent(x, y, colour)
 
 
 def draw_grid():
@@ -65,6 +72,18 @@ def draw_block(x, y, colour):
     pg.draw.rect(field_surface, colour, pg.Rect(x, y, SQUARE_SIZE, SQUARE_SIZE))
 
 
+def draw_block_transparent(x, y, colour):
+    x = x * SQUARE_SIZE
+    y = FIELD_SIZE[1] - (y + 1) * SQUARE_SIZE
+    draw_rect_alpha(field_surface, colour, pg.Rect(x, y, SQUARE_SIZE, SQUARE_SIZE))
+
+
+def draw_rect_alpha(surface, color, rect):
+    shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
+    pg.draw.rect(shape_surf, color, shape_surf.get_rect())
+    surface.blit(shape_surf, rect)
+
+
 def draw_piece(piece: tet.Piece):
     coords = piece.get_coordinates()
     colour = piece.get_colour()
@@ -77,7 +96,7 @@ def next_piece():
     this subroutine is probably not best code design, but I don't really care at this point.
     :return: (whether the game is over or not)
     """
-    global cur_piece
+    global cur_piece, ghost_coords
     lines_cleared = cur_piece.place()
     if 0 < lines_cleared <= 4:
         global score, level, lines_to_next_level
@@ -93,6 +112,7 @@ def next_piece():
     cur_piece = tet.num_to_piece(selector.next())(field)
     update_next()
     cur_piece.drop()
+    ghost_coords = cur_piece.get_ghost_coords()
     return True
 
 
@@ -102,6 +122,8 @@ def update_field():
     draw_field(field)
     draw_piece(cur_piece)
     draw_grid()
+    if GHOST:
+        draw_ghost(ghost_coords, cur_piece.get_colour() + (GHOST_ALPHA, ))
     window.blit(field_surface, FIELD_COORDS)
 
 
@@ -163,6 +185,8 @@ def update_next():
 
 def setup():
     pg.init()
+    pg.display.set_caption('Almost Tetris')
+
     window.fill(BG_COLOUR)
     field_surface.fill(EMPTY_COLOUR)
     next_piece_surface.fill(GRID_COLOUR)
@@ -208,6 +232,7 @@ if __name__ == "__main__":
     held = None
     used_hold = 0
     lines_to_next_level = get_lines_to_next_level()
+    ghost_coords = cur_piece.get_ghost_coords()
 
     setup()
 
@@ -220,9 +245,11 @@ if __name__ == "__main__":
                     case pg.K_LEFT:
                         if cur_piece.left():
                             place_cd = FPS // 4
+                            ghost_coords = cur_piece.get_ghost_coords()
                     case pg.K_RIGHT:
                         if cur_piece.right():
                             place_cd = FPS // 4
+                            ghost_coords = cur_piece.get_ghost_coords()
                     case pg.K_DOWN:
                         cur_piece.drop()
                     case pg.K_SPACE:
@@ -233,9 +260,11 @@ if __name__ == "__main__":
                     case pg.K_x | pg.K_UP:
                         cur_piece.rotate_right()
                         place_cd = get_new_next_move_val()
+                        ghost_coords = cur_piece.get_ghost_coords()
                     case pg.K_z:
                         cur_piece.rotate_left()
                         place_cd = get_new_next_move_val()
+                        ghost_coords = cur_piece.get_ghost_coords()
                     case pg.K_c:
                         if not used_hold == 2:
                             used_hold += 1
@@ -247,6 +276,7 @@ if __name__ == "__main__":
                                 cur_piece.__init__(field)
                             update_hold_surface()
                             next_move = get_new_next_move_val()
+                            ghost_coords = cur_piece.get_ghost_coords()
 
         next_move -= 1
         if place_cd > 0:
