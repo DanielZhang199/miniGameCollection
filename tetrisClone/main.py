@@ -1,21 +1,24 @@
+import pygame
 import pygame as pg
 from bag import Bag
 from playfield import Playfield
 import tetrominoes as tet
 
-WINDOW_SIZE = 720, 720
+WINDOW_SIZE = 800, 720
 FPS = 60  # should be multiple of 30 (but other speeds should work)
 SQUARE_SIZE = 35
-FIELD_COORDS = 185, 10
+FIELD_COORDS = 265, 10
 FIELD_SIZE = 350, 700
 GRID_DIMENSIONS = Playfield.get_dimensions()
 GRID_WIDTH = 4
 NEXT_SIZE = 150, 500
-NEXT_COORDS = 555, 20
-SCORE_SIZE = 150, 200
-SCORE_COORDS = 15, 20
+NEXT_COORDS = 635, 20
+SCORE_SIZE = 230, 180
+SCORE_COORDS = 15, 115
 HOLD_SIZE = 150, 140
-HOLD_COORDS = 15, 250
+HOLD_COORDS = 55, 350
+HSCORE_SIZE = 230, 100
+HSCORE_COORDS = 15, 20
 MARGIN = 10
 
 pg.font.init()
@@ -29,7 +32,8 @@ EMPTY_COLOUR = (10,) * 3
 
 MUSIC_FILE = "TetrisTheme.ogg"
 VOLUME = 0.1
-SCORING_BASE_VALUES = (40, 100, 300, 1200)
+SCORING_BASE_VALUES = (100, 300, 500, 800)
+COMBO_VALUE = 50
 GHOST = True  # displays ghost of where piece will land
 GHOST_ALPHA = 50
 
@@ -99,13 +103,19 @@ def next_piece():
     global cur_piece, ghost_coords
     lines_cleared = cur_piece.place()
     if 0 < lines_cleared <= 4:
-        global score, level, lines_to_next_level
+        global score, level, lines_to_next_level, can_combo
         lines_to_next_level -= lines_cleared
         score += SCORING_BASE_VALUES[lines_cleared - 1] * level
+        if can_combo:
+            score += COMBO_VALUE * level
+        else:
+            can_combo = True
         update_score()
         if lines_to_next_level <= 0:
             level += 1
             lines_to_next_level += get_lines_to_next_level()
+    else:
+        can_combo = False
 
     if field.garbage_out():
         return False
@@ -160,8 +170,8 @@ def update_score():
     level_x_pos = SCORE_SIZE[0] - level_text.get_rect().width - MARGIN
     score_surface.blit(static_text_1, (15, MARGIN))
     score_surface.blit(score_text, (score_x_pos, FONT_SIZE + MARGIN))
-    score_surface.blit(static_text_2, (15, (FONT_SIZE + MARGIN) * 2))
-    score_surface.blit(level_text, (level_x_pos, FONT_SIZE * 3 + MARGIN * 2))
+    score_surface.blit(level_text, (level_x_pos, FONT_SIZE * 2 + MARGIN * 4))
+    score_surface.blit(static_text_2, (15, FONT_SIZE * 2 + MARGIN * 4))
     window.blit(score_surface, SCORE_COORDS)
 
 
@@ -200,18 +210,43 @@ def setup():
     update_score()
     update_hold_surface()
     update_next()
+
+    hs_surface = pygame.Surface(HSCORE_SIZE)
+    hs_surface.fill(GRID_COLOUR)
+    text = FONT.render("HIGH SCORE:", True, TEXT_COLOUR)
+    score_text = FONT.render(str(HIGH_SCORE), True, TEXT_COLOUR)
+    score_x_pos = SCORE_SIZE[0] - score_text.get_rect().width - MARGIN
+    hs_surface.blit(text, (15, MARGIN))
+    hs_surface.blit(score_text, (score_x_pos, FONT_SIZE + MARGIN))
+    window.blit(hs_surface, HSCORE_COORDS)
+
     pg.display.flip()
 
 
 def get_new_next_move_val():
-    # return either FPS - level * FPS // 15 (linear decrease from 1 second to 0 seconds over 15 levels)
-    # or minimum of 2/30ths of a second, but exact time will depend on FPS
+    # return either FPS - level * FPS // 10 (linear decrease from 1 second to 0 seconds over 15 levels)
+    # or minimum of 2 frames
     # while levels can exceed 15, the actual speed will never exceed that of level 15 (levels start at 1)
-    return max(FPS - (level - 1) * FPS // 15, FPS // 15)
+    return max(FPS - (level - 1) * FPS // 20, 2)
 
 
 def get_lines_to_next_level():
-    return 5 + (level - 1) * 10
+    return 2 + level * 2
+
+
+def get_high_score():
+    try:
+        with open("high_score.txt", "r") as f:
+            return int(f.read())
+    except FileNotFoundError:
+        with open("high_score.txt", "w") as f:
+            f.write("0")
+            return 0
+
+
+def write_high_score(num):
+    with open("high_score.txt", "w") as f:
+        f.write(str(num))
 
 
 if __name__ == "__main__":
@@ -229,10 +264,12 @@ if __name__ == "__main__":
     next_move = get_new_next_move_val()
     place_cd = 0
     score = 0
+    can_combo = False
     held = None
     used_hold = 0
     lines_to_next_level = get_lines_to_next_level()
     ghost_coords = cur_piece.get_ghost_coords()
+    HIGH_SCORE = get_high_score()
 
     setup()
 
@@ -252,6 +289,7 @@ if __name__ == "__main__":
                             ghost_coords = cur_piece.get_ghost_coords()
                     case pg.K_DOWN:
                         cur_piece.drop()
+                        place_cd = FPS // 4
                     case pg.K_SPACE:
                         cur_piece.hard_drop()
                         window_open = next_piece()
@@ -291,3 +329,6 @@ if __name__ == "__main__":
 
         pg.display.flip()
         pg.time.Clock().tick(FPS)
+
+    if score > HIGH_SCORE:
+        write_high_score(score)
