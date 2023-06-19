@@ -114,7 +114,7 @@ def next_piece():
     if 0 < lines_cleared <= 4:
         global score, level, lines_to_next_level, can_combo
         lines_to_next_level -= lines_cleared
-        score += SCORING_BASE_VALUES[lines_cleared - 1] * level
+        score += SCORING_BASE_VALUES[lines_cleared] * level
         if can_combo:
             score += COMBO_VALUE * level
         else:
