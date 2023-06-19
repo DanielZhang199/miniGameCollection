@@ -37,6 +37,15 @@ COMBO_VALUE = 50
 GHOST = True  # displays ghost of where piece will land
 GHOST_ALPHA = 50
 
+# Define movement constants
+MOVE_DELAY = 10  # Frames between continuous movements
+MOVE_REPEAT = 3  # Frames between subsequent continuous movements
+SOFT_DROP_SPEED = 2  # Frames between subsequent drops in a soft drop
+MIN_PLACE_DELAY = 45
+
+INFINITY = False
+MAX_ROTATES = 15
+
 
 def draw_field(pf: Playfield):
     # field goes from top to bottom of window, and 175 pixels from each edge of window
@@ -100,7 +109,7 @@ def next_piece():
     this subroutine is probably not best code design, but I don't really care at this point.
     :return: (whether the game is over or not)
     """
-    global cur_piece, ghost_coords
+    global cur_piece, ghost_coords, place_countdown_activated, place_countdown, rotates_remaining
     lines_cleared = cur_piece.place()
     if 0 < lines_cleared <= 4:
         global score, level, lines_to_next_level, can_combo
@@ -123,6 +132,9 @@ def next_piece():
     update_next()
     cur_piece.drop()
     ghost_coords = cur_piece.get_ghost_coords()
+    place_countdown = MIN_PLACE_DELAY
+    place_countdown_activated = False
+    rotates_remaining = MAX_ROTATES
     return True
 
 
@@ -251,6 +263,7 @@ def write_high_score(num):
 
 if __name__ == "__main__":
     # setup global variables
+    clock = pygame.time.Clock()
     window = pg.display.set_mode(WINDOW_SIZE)
     field_surface = pg.Surface(FIELD_SIZE)
     next_piece_surface = pg.Surface(NEXT_SIZE)
@@ -260,13 +273,17 @@ if __name__ == "__main__":
     selector = Bag()
     field = Playfield()
     cur_piece = tet.num_to_piece(selector.next())(field)
-    level = 1
+    level = 20
     next_move = get_new_next_move_val()
-    place_cd = 0
+    place_countdown = MIN_PLACE_DELAY
+    place_countdown_activated = False
+    rotates_remaining = MAX_ROTATES
     score = 0
     can_combo = False
     held = None
     used_hold = 0
+    move_timer = 0
+    drop_timer = 0
     lines_to_next_level = get_lines_to_next_level()
     ghost_coords = cur_piece.get_ghost_coords()
     HIGH_SCORE = get_high_score()
@@ -280,16 +297,16 @@ if __name__ == "__main__":
             elif event.type == pg.KEYDOWN:
                 match event.key:
                     case pg.K_LEFT:
+                        move_timer = 0
                         if cur_piece.left():
-                            place_cd = FPS // 4
                             ghost_coords = cur_piece.get_ghost_coords()
                     case pg.K_RIGHT:
+                        move_timer = 0
                         if cur_piece.right():
-                            place_cd = FPS // 4
                             ghost_coords = cur_piece.get_ghost_coords()
                     case pg.K_DOWN:
+                        drop_timer = 0
                         cur_piece.drop()
-                        place_cd = FPS // 4
                     case pg.K_SPACE:
                         cur_piece.hard_drop()
                         window_open = next_piece()
@@ -297,15 +314,24 @@ if __name__ == "__main__":
                         next_move = get_new_next_move_val()
                     case pg.K_x | pg.K_UP:
                         cur_piece.rotate_right()
-                        place_cd = get_new_next_move_val()
                         ghost_coords = cur_piece.get_ghost_coords()
+                        if rotates_remaining >= 0:
+                            place_countdown = MIN_PLACE_DELAY
+                            if not INFINITY and place_countdown_activated:
+                                rotates_remaining -= 1
                     case pg.K_z:
                         cur_piece.rotate_left()
-                        place_cd = get_new_next_move_val()
                         ghost_coords = cur_piece.get_ghost_coords()
+                        if rotates_remaining >= 0:
+                            place_countdown = MIN_PLACE_DELAY
+                            if not INFINITY and place_countdown_activated:
+                                rotates_remaining -= 1
                     case pg.K_c:
                         if not used_hold == 2:
                             used_hold += 1
+                            place_countdown = MIN_PLACE_DELAY
+                            place_countdown_activated = False
+                            rotates_remaining = MAX_ROTATES
                             if held is None:
                                 held, cur_piece = cur_piece, tet.num_to_piece(selector.next())(field)
                                 update_next()
@@ -316,12 +342,34 @@ if __name__ == "__main__":
                             next_move = get_new_next_move_val()
                             ghost_coords = cur_piece.get_ghost_coords()
 
+        keys = pygame.key.get_pressed()
+        if keys[pg.K_LEFT]:
+            move_timer += 1  # keep track of how long key has been held
+            if move_timer >= MOVE_DELAY:
+                if cur_piece.left():
+                    move_timer -= MOVE_REPEAT
+                    ghost_coords = cur_piece.get_ghost_coords()
+        elif keys[pg.K_RIGHT]:
+            move_timer += 1
+            if move_timer >= MOVE_DELAY:
+                if cur_piece.right():
+                    move_timer -= MOVE_REPEAT
+                    ghost_coords = cur_piece.get_ghost_coords()
+        if keys[pg.K_DOWN]:
+            drop_timer += 1
+            if drop_timer >= MOVE_DELAY:
+                drop_timer -= SOFT_DROP_SPEED
+                cur_piece.drop()
+
         next_move -= 1
-        if place_cd > 0:
-            place_cd -= 1
         if next_move <= 0:
             next_move = get_new_next_move_val()
-            if not cur_piece.drop() and place_cd <= 0:
+            if not cur_piece.drop():
+                place_countdown_activated = True
+
+        if place_countdown_activated:
+            place_countdown -= 1
+            if place_countdown <= 0:
                 window_open = next_piece()
                 used_hold = 0
 
