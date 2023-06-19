@@ -129,10 +129,12 @@ class Piece:
         """
         calls drop over and over until it returns false. Not sure about the practicality, but this function is useful
         abstraction regardless of necessity
-        :return: nothing (since we already know that the piece can't move further)
+        :return: (int) number of rows piece was dropped
         """
+        counter = 0
         while self.drop():
-            pass
+            counter += 1
+        return counter
 
     def get_ghost_coords(self):
         """

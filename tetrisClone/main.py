@@ -32,7 +32,7 @@ EMPTY_COLOUR = (10,) * 3
 
 MUSIC_FILE = "TetrisTheme.ogg"
 VOLUME = 0.1
-SCORING_BASE_VALUES = (100, 300, 500, 800)
+SCORING_BASE_VALUES = {1: 100, 2: 300, 3: 500, 4: 800, "SoftDrop": 1, "HardDrop": 2}
 COMBO_VALUE = 50
 GHOST = True  # displays ghost of where piece will land
 GHOST_ALPHA = 50
@@ -119,7 +119,6 @@ def next_piece():
             score += COMBO_VALUE * level
         else:
             can_combo = True
-        update_score()
         if lines_to_next_level <= 0:
             level += 1
             lines_to_next_level += get_lines_to_next_level()
@@ -219,7 +218,6 @@ def setup():
     pg.mixer.music.set_volume(VOLUME)
     pg.mixer.music.play(-1)
 
-    update_score()
     update_hold_surface()
     update_next()
 
@@ -273,7 +271,7 @@ if __name__ == "__main__":
     selector = Bag()
     field = Playfield()
     cur_piece = tet.num_to_piece(selector.next())(field)
-    level = 20
+    level = 1
     next_move = get_new_next_move_val()
     place_countdown = MIN_PLACE_DELAY
     place_countdown_activated = False
@@ -307,8 +305,9 @@ if __name__ == "__main__":
                     case pg.K_DOWN:
                         drop_timer = 0
                         cur_piece.drop()
+                        score += SCORING_BASE_VALUES["SoftDrop"]
                     case pg.K_SPACE:
-                        cur_piece.hard_drop()
+                        score += SCORING_BASE_VALUES["HardDrop"] * cur_piece.hard_drop()
                         window_open = next_piece()
                         used_hold = False
                         next_move = get_new_next_move_val()
@@ -360,6 +359,7 @@ if __name__ == "__main__":
             if drop_timer >= MOVE_DELAY:
                 drop_timer -= SOFT_DROP_SPEED
                 cur_piece.drop()
+                score += SCORING_BASE_VALUES["SoftDrop"]
 
         next_move -= 1
         if next_move <= 0:
@@ -374,6 +374,7 @@ if __name__ == "__main__":
                 used_hold = 0
 
         update_field()
+        update_score()
 
         pg.display.flip()
         pg.time.Clock().tick(FPS)
