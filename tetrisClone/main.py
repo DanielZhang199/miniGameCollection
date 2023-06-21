@@ -32,8 +32,10 @@ EMPTY_COLOUR = (10,) * 3
 
 MUSIC_FILE = "TetrisTheme.ogg"
 VOLUME = 0.1
-SCORING_BASE_VALUES = {1: 100, 2: 300, 3: 500, 4: 800, "SoftDrop": 1, "HardDrop": 2}
-COMBO_VALUE = 50
+SCORING_BASE_VALUES = {1: 100, 2: 300, 3: 500, 4: 800, "SoftDrop": 1, "HardDrop": 2, "Combo": 50,
+                       "TSpin1": 800, "TSpin2": 1200, "TSpin3": 1600}  # zero line t-spin not implemented
+BACK_TO_BACK_MULTIPLIER = 1.5   # for tetris and t spins
+T_SPIN_KICK_PENALTY = 0.5  # not yet implemented
 GHOST = True  # displays ghost of where piece will land
 GHOST_ALPHA = 50
 
@@ -109,21 +111,42 @@ def next_piece():
     this subroutine is probably not best code design, but I don't really care at this point.
     :return: (whether the game is over or not)
     """
-    global cur_piece, ghost_coords, place_countdown_activated, place_countdown, rotates_remaining
+    global cur_piece, ghost_coords, countdown_activated, place_countdown, rotates_remaining, last_movement, combo_count
+    is_t_spin = type(cur_piece) == tet.TPiece and last_movement == "ROTATE" and cur_piece.t_spin_corners_satisfied()
     lines_cleared = cur_piece.place()
-    if 0 < lines_cleared <= 4:
-        global score, level, lines_to_next_level, can_combo
+    if lines_cleared > 0:
+        global score, level, lines_to_next_level, can_b2b
+        combo_count += 1
+        if combo_count > 0:
+            score += SCORING_BASE_VALUES["Combo"] * level * combo_count
+            print("COMBO: " + str(combo_count))
+
+        if lines_cleared == 4:
+            if can_b2b:
+                score += int(SCORING_BASE_VALUES[4] * level * BACK_TO_BACK_MULTIPLIER)  # the multiplier is a float
+                print("B2B TETRIS")
+            else:
+                score += SCORING_BASE_VALUES[4] * level
+                print("TETRIS")
+                can_b2b = True
+        elif is_t_spin:
+            if can_b2b:
+                score += int(SCORING_BASE_VALUES["TSpin" + str(lines_cleared)] * level * BACK_TO_BACK_MULTIPLIER)
+                print("B2B T-SPIN (" + str(lines_cleared) + " lines)")
+            else:
+                score += SCORING_BASE_VALUES["TSpin" + str(lines_cleared)] * level
+                print("T-SPIN (" + str(lines_cleared) + " lines)")
+                can_b2b = True
+        elif 0 < lines_cleared <= 3:
+            can_b2b = False
+            score += SCORING_BASE_VALUES[lines_cleared] * level
+
         lines_to_next_level -= lines_cleared
-        score += SCORING_BASE_VALUES[lines_cleared] * level
-        if can_combo:
-            score += COMBO_VALUE * level
-        else:
-            can_combo = True
         if lines_to_next_level <= 0:
             level += 1
             lines_to_next_level += get_lines_to_next_level()
     else:
-        can_combo = False
+        combo_count = -1
 
     if field.garbage_out():
         return False
@@ -132,8 +155,9 @@ def next_piece():
     cur_piece.drop()
     ghost_coords = cur_piece.get_ghost_coords()
     place_countdown = MIN_PLACE_DELAY
-    place_countdown_activated = False
+    countdown_activated = False
     rotates_remaining = MAX_ROTATES
+    last_movement = None
     return True
 
 
@@ -270,18 +294,21 @@ if __name__ == "__main__":
     window_open = True
     selector = Bag()
     field = Playfield()
-    cur_piece = tet.num_to_piece(selector.next())(field)
     level = 1
+    score = 0
+
+    cur_piece = tet.num_to_piece(selector.next())(field)
     next_move = get_new_next_move_val()
     place_countdown = MIN_PLACE_DELAY
-    place_countdown_activated = False
+    countdown_activated = False
     rotates_remaining = MAX_ROTATES
-    score = 0
-    can_combo = False
+    combo_count = -1
+    can_b2b = False
     held = None
     used_hold = 0
     move_timer = 0
     drop_timer = 0
+    last_movement = None
     lines_to_next_level = get_lines_to_next_level()
     ghost_coords = cur_piece.get_ghost_coords()
     HIGH_SCORE = get_high_score()
@@ -298,39 +325,46 @@ if __name__ == "__main__":
                         move_timer = 0
                         if cur_piece.left():
                             ghost_coords = cur_piece.get_ghost_coords()
+                            last_movement = "LEFT"
                     case pg.K_RIGHT:
                         move_timer = 0
                         if cur_piece.right():
                             ghost_coords = cur_piece.get_ghost_coords()
+                            last_movement = "RIGHT"
                     case pg.K_DOWN:
                         drop_timer = 0
-                        cur_piece.drop()
-                        score += SCORING_BASE_VALUES["SoftDrop"]
+                        if cur_piece.drop():
+                            last_movement = "DOWN"
+                            score += SCORING_BASE_VALUES["SoftDrop"]
                     case pg.K_SPACE:
                         score += SCORING_BASE_VALUES["HardDrop"] * cur_piece.hard_drop()
+                        last_movement = "DOWN"
                         window_open = next_piece()
                         used_hold = False
                         next_move = get_new_next_move_val()
                     case pg.K_x | pg.K_UP:
                         cur_piece.rotate_right()
+                        last_movement = "ROTATE"
                         ghost_coords = cur_piece.get_ghost_coords()
                         if rotates_remaining >= 0:
                             place_countdown = MIN_PLACE_DELAY
-                            if not INFINITY and place_countdown_activated:
+                            if not INFINITY and countdown_activated:
                                 rotates_remaining -= 1
                     case pg.K_z:
                         cur_piece.rotate_left()
+                        last_movement = "ROTATE"
                         ghost_coords = cur_piece.get_ghost_coords()
                         if rotates_remaining >= 0:
                             place_countdown = MIN_PLACE_DELAY
-                            if not INFINITY and place_countdown_activated:
+                            if not INFINITY and countdown_activated:
                                 rotates_remaining -= 1
                     case pg.K_c:
                         if not used_hold == 2:
                             used_hold += 1
                             place_countdown = MIN_PLACE_DELAY
-                            place_countdown_activated = False
+                            countdown_activated = False
                             rotates_remaining = MAX_ROTATES
+                            last_movement = None
                             if held is None:
                                 held, cur_piece = cur_piece, tet.num_to_piece(selector.next())(field)
                                 update_next()
@@ -348,26 +382,29 @@ if __name__ == "__main__":
                 if cur_piece.left():
                     move_timer -= MOVE_REPEAT
                     ghost_coords = cur_piece.get_ghost_coords()
+                    last_movement = "LEFT"
         elif keys[pg.K_RIGHT]:
             move_timer += 1
             if move_timer >= MOVE_DELAY:
                 if cur_piece.right():
                     move_timer -= MOVE_REPEAT
                     ghost_coords = cur_piece.get_ghost_coords()
+                    last_movement = "RIGHT"
         if keys[pg.K_DOWN]:
             drop_timer += 1
             if drop_timer >= MOVE_DELAY:
                 drop_timer -= SOFT_DROP_SPEED
-                cur_piece.drop()
-                score += SCORING_BASE_VALUES["SoftDrop"]
+                if cur_piece.drop():
+                    score += SCORING_BASE_VALUES["SoftDrop"]
+                    last_movement = "DOWN"
 
         next_move -= 1
         if next_move <= 0:
             next_move = get_new_next_move_val()
             if not cur_piece.drop():
-                place_countdown_activated = True
+                countdown_activated = True
 
-        if place_countdown_activated:
+        if countdown_activated:
             place_countdown -= 1
             if place_countdown <= 0:
                 window_open = next_piece()

@@ -339,6 +339,18 @@ class TPiece(Piece):
             case 3:
                 return self._abs_coords(((1, 0), (1, 1), (0, 1), (1, 2)))
 
+    def t_spin_corners_satisfied(self):
+        """
+        returns true if 3 or 4 of the 4 pieces diagonally from the pivot point of the t-piece are occupied.
+        (for more detail, google what is considered a t-spin)
+        :return: (boolean)
+        """
+        count = 0
+        for x, y in self._abs_coords(((0, 0), (0, 2), (2, 0), (2, 2))):
+            if not self._field.is_clear(x, y):
+                count += 1
+        return count >= 3
+
     @staticmethod
     def get_colour():
         return 221, 10, 178  # Purple
