@@ -47,8 +47,8 @@ class Piece:
     def __init__(self, pf: Playfield):
         if type(self) is Piece:
             raise Exception('Piece is an abstract class and cannot be instantiated directly')
-        self._coordinates = None
-        self._corner = [3, 21]  # x, y position of top left corner of 'hit-box' for rotations
+        self._corner = [3, 21]  # x, y position of top left corner of 'hit-box' for rotations and absolute position
+        self._coordinates = self._abs_coords(self.default_piece_positions())
         self._rotation = 0
         self._field = pf
         self._placed = False
@@ -68,6 +68,10 @@ class Piece:
     @staticmethod
     def get_colour():
         raise NotImplementedError("Subclass did not implement get_colour method")
+
+    @staticmethod
+    def default_piece_positions():
+        raise NotImplementedError("Subclass did not implement default_piece_positions method")
 
     def _get_rotation_coords(self, order):
         raise NotImplementedError("Subclass did not implement _try_place method")
@@ -224,7 +228,6 @@ class IPiece(Piece):
     def __init__(self, pf):
         super().__init__(pf)
         # list of coordinates of each piece component when spawning
-        self._coordinates = [[3, 20], [4, 20], [5, 20], [6, 20]]
 
     # while this seems like a static method, the absolute coordinates after rotation are dependent on piece position
     # in the playing field and therefore the function cannot be made completely static.
@@ -259,10 +262,6 @@ class IPiece(Piece):
 
 
 class ZPiece(Piece):
-    def __init__(self, pf):
-        super().__init__(pf)
-        self._coordinates = [[3, 21], [4, 21], [4, 20], [5, 20]]
-
     def _get_rotation_coords(self, orientation):
         """
         gets the positions of pieces if tetromino was to rotate into specified position
@@ -289,10 +288,6 @@ class ZPiece(Piece):
 
 
 class SPiece(Piece):
-    def __init__(self, pf):
-        super().__init__(pf)
-        self._coordinates = [[3, 20], [4, 20], [4, 21], [5, 21]]
-
     def _get_rotation_coords(self, orientation):
         """
         gets the positions of pieces if tetromino was to rotate into specified position
@@ -319,10 +314,6 @@ class SPiece(Piece):
 
 
 class TPiece(Piece):
-    def __init__(self, pf):
-        super().__init__(pf)
-        self._coordinates = [[3, 20], [4, 20], [4, 21], [5, 20]]
-
     def _get_rotation_coords(self, orientation):
         """
         gets the positions of pieces if tetromino was to rotate into specified position
@@ -361,10 +352,6 @@ class TPiece(Piece):
 
 
 class LPiece(Piece):
-    def __init__(self, pf):
-        super().__init__(pf)
-        self._coordinates = [[3, 20], [4, 20], [5, 20], [5, 21]]
-
     def _get_rotation_coords(self, orientation):
         """
         gets the positions of pieces if tetromino was to rotate into specified position
@@ -391,10 +378,6 @@ class LPiece(Piece):
 
 
 class JPiece(Piece):
-    def __init__(self, pf):
-        super().__init__(pf)
-        self._coordinates = [[3, 20], [3, 21], [4, 20], [5, 20]]
-
     def _get_rotation_coords(self, orientation):
         """
         gets the positions of pieces if tetromino was to rotate into specified position
@@ -421,10 +404,6 @@ class JPiece(Piece):
 
 
 class OPiece(Piece):
-    def __init__(self, pf):
-        super().__init__(pf)
-        self._coordinates = [[4, 21], [4, 20], [5, 21], [5, 20]]
-
     def _get_rotation_coords(self, orientation):
         """
         gets the positions of pieces if tetromino was to rotate into specified position
