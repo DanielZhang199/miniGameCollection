@@ -4,22 +4,27 @@ from bag import Bag
 from playfield import Playfield
 import tetrominoes as tet
 
-WINDOW_SIZE = 800, 720
+WINDOW_SIZE = 920, 840
 FPS = 60  # should be multiple of 30 (but other speeds should work)
-SQUARE_SIZE = 35
-FIELD_COORDS = 265, 10
-FIELD_SIZE = 350, 700
+SQUARE_SIZE = 40
+FIELD_COORDS = 240, 20
+FIELD_SIZE = SQUARE_SIZE * 10, SQUARE_SIZE * 20  # currently 400 by 800
 GRID_DIMENSIONS = Playfield.get_dimensions()
 GRID_WIDTH = 4
-NEXT_SIZE = 150, 500
-NEXT_COORDS = 635, 20
-SCORE_SIZE = 230, 180
-SCORE_COORDS = 15, 115
-HOLD_SIZE = 150, 140
-HOLD_COORDS = 55, 350
+
+NEXT_SIZE = 190, 480
+NEXT_COORDS = 695, 20
 HSCORE_SIZE = 230, 100
-HSCORE_COORDS = 15, 20
-MARGIN = 10
+HSCORE_COORDS = 665, 520
+SCORE_SIZE = 230, 180
+SCORE_COORDS = 665, 640
+
+HOLD_SIZE = 190, 140
+HOLD_COORDS = 20, 20
+TEXT_BOX_SIZE = 230, 200
+TEXT_LOCATION = 15, 20
+
+MARGIN = 15
 
 pg.font.init()
 FONT_SIZE = 45
@@ -146,6 +151,8 @@ def next_piece():
             level += 1
             lines_to_next_level += get_lines_to_next_level()
     else:
+        if combo_count > 0:
+            print("COMBO BREAK")
         combo_count = -1
 
     if field.garbage_out():
@@ -186,11 +193,11 @@ def update_hold_surface():
     static_text = FONT.render("HOLD:", True, TEXT_COLOUR)
     if held is not None:  # so it doesn't crash randomly
         if type(held) == tet.IPiece or type(held) == tet.OPiece:
-            offset = (HOLD_SIZE[0] // 8.5, HOLD_SIZE[1] // 8)
+            offset = (HOLD_SIZE[0] // 7, HOLD_SIZE[1] // 9)
         else:
-            offset = (HOLD_SIZE[0] // 4.5, HOLD_SIZE[1] // 8)
+            offset = (HOLD_SIZE[0] // 4, HOLD_SIZE[1] // 9)
         draw_graphic_on(hold_surface, held.get_colour(), SQUARE_SIZE // 1.2, held.default_piece_positions(), offset, 2)
-    hold_surface.blit(static_text, (25, MARGIN))
+    hold_surface.blit(static_text, (45, MARGIN))
     window.blit(hold_surface, HOLD_COORDS)
 
 
@@ -205,26 +212,26 @@ def update_score():
     level_x_pos = SCORE_SIZE[0] - level_text.get_rect().width - MARGIN
     score_surface.blit(static_text_1, (15, MARGIN))
     score_surface.blit(score_text, (score_x_pos, FONT_SIZE + MARGIN))
-    score_surface.blit(level_text, (level_x_pos, FONT_SIZE * 2 + MARGIN * 4))
-    score_surface.blit(static_text_2, (15, FONT_SIZE * 2 + MARGIN * 4))
+    score_surface.blit(level_text, (level_x_pos, FONT_SIZE * 2 + MARGIN * 3))
+    score_surface.blit(static_text_2, (15, FONT_SIZE * 2 + MARGIN * 3))
     window.blit(score_surface, SCORE_COORDS)
 
 
 def update_next():
     next_piece_surface.fill(GRID_COLOUR)
     static_text = FONT.render("NEXT:", True, TEXT_COLOUR)
-    next_pieces = selector.show_next_n(6)
+    next_pieces = selector.show_next_n(5)
     for i, piece_num in enumerate(next_pieces):
         p_type = tet.num_to_piece(piece_num)
         if p_type == tet.IPiece:
-            offset = (NEXT_SIZE[0] // 5, NEXT_SIZE[1] // 7 * i + 10)
+            offset = (NEXT_SIZE[0] // 5, NEXT_SIZE[1] // 5.7 * i + 5)
         elif p_type == tet.OPiece:
-            offset = (NEXT_SIZE[0] // 5, NEXT_SIZE[1] // 7 * i + 20)
+            offset = (NEXT_SIZE[0] // 5, NEXT_SIZE[1] // 5.7 * i + 15)
         else:
-            offset = (NEXT_SIZE[0] // 3.5, NEXT_SIZE[1] // 7 * i + 20)
-        draw_graphic_on(next_piece_surface, p_type.get_colour(), SQUARE_SIZE // 1.5, p_type.default_piece_positions(),
-                        offset, 1)
-    next_piece_surface.blit(static_text, (30, MARGIN))
+            offset = (NEXT_SIZE[0] // 3.5, NEXT_SIZE[1] // 5.7 * i + 15)
+        draw_graphic_on(next_piece_surface, p_type.get_colour(), SQUARE_SIZE // 1.2, p_type.default_piece_positions(),
+                        offset, 2)
+    next_piece_surface.blit(static_text, (50, MARGIN))
     window.blit(next_piece_surface, NEXT_COORDS)
 
 
@@ -265,7 +272,7 @@ def get_new_next_move_val():
 
 
 def get_lines_to_next_level():
-    return 2 + level * 2
+    return 4 + level
 
 
 def get_high_score():
@@ -283,6 +290,10 @@ def write_high_score(num):
         f.write(str(num))
 
 
+def write_impact_text(text):
+    pass
+
+
 if __name__ == "__main__":
     # setup global variables
     clock = pygame.time.Clock()
@@ -291,6 +302,7 @@ if __name__ == "__main__":
     next_piece_surface = pg.Surface(NEXT_SIZE)
     score_surface = pg.Surface(SCORE_SIZE)
     hold_surface = pg.Surface(HOLD_SIZE)
+    text_surface = pg.Surface(TEXT_BOX_SIZE, pg.SRCALPHA)
     window_open = True
     selector = Bag()
     field = Playfield()
@@ -402,13 +414,13 @@ if __name__ == "__main__":
         if next_move <= 0:
             next_move = get_new_next_move_val()
             if not cur_piece.drop():
+                if place_countdown <= 0:
+                    window_open = next_piece()
+                    used_hold = 0
                 countdown_activated = True
 
         if countdown_activated:
             place_countdown -= 1
-            if place_countdown <= 0:
-                window_open = next_piece()
-                used_hold = 0
 
         update_field()
         update_score()
