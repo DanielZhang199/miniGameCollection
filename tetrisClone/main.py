@@ -1,34 +1,34 @@
-import pygame
 import pygame as pg
 from bag import Bag
 from playfield import Playfield
 import tetrominoes as tet
 
-WINDOW_SIZE = 920, 840
+WINDOW_SIZE = 930, 840
 FPS = 60  # should be multiple of 30 (but other speeds should work)
 SQUARE_SIZE = 40
-FIELD_COORDS = 240, 20
+FIELD_COORDS = 250, 20
 FIELD_SIZE = SQUARE_SIZE * 10, SQUARE_SIZE * 20  # currently 400 by 800
 GRID_DIMENSIONS = Playfield.get_dimensions()
 GRID_WIDTH = 4
 
 NEXT_SIZE = 190, 480
-NEXT_COORDS = 695, 20
+NEXT_COORDS = 705, 20
 HSCORE_SIZE = 230, 100
-HSCORE_COORDS = 665, 520
+HSCORE_COORDS = 675, 520
 SCORE_SIZE = 230, 180
-SCORE_COORDS = 665, 640
+SCORE_COORDS = 675, 640
 
 HOLD_SIZE = 190, 140
-HOLD_COORDS = 20, 20
-TEXT_BOX_SIZE = 230, 200
-TEXT_LOCATION = 15, 20
+HOLD_COORDS = 30, 20
+TEXT_BOX_SIZE = 240, 200
+TEXT_LOCATION = 30, 200
 
 MARGIN = 15
 
 pg.font.init()
 FONT_SIZE = 45
 FONT = pg.font.SysFont('Lucon.ttf', FONT_SIZE)
+SMALL_FONT = pg.font.SysFont('Lucon.ttf', FONT_SIZE - 10)
 TEXT_COLOUR = (255,) * 3
 
 BG_COLOUR = (95,) * 3
@@ -39,6 +39,7 @@ MUSIC_FILE = "TetrisTheme.ogg"
 VOLUME = 0.1
 SCORING_BASE_VALUES = {1: 100, 2: 300, 3: 500, 4: 800, "SoftDrop": 1, "HardDrop": 2, "Combo": 50,
                        "TSpin1": 800, "TSpin2": 1200, "TSpin3": 1600}  # zero line t-spin not implemented
+NUMBER_TO_WORD = {1: "SINGLE", 2: "DOUBLE", 3: "TRIPLE"}
 BACK_TO_BACK_MULTIPLIER = 1.5   # for tetris and t spins
 T_SPIN_KICK_PENALTY = 0.5  # not yet implemented
 GHOST = True  # displays ghost of where piece will land
@@ -98,9 +99,9 @@ def draw_block_transparent(x, y, colour):
     draw_rect_alpha(field_surface, colour, pg.Rect(x, y, SQUARE_SIZE, SQUARE_SIZE))
 
 
-def draw_rect_alpha(surface, color, rect):
+def draw_rect_alpha(surface, colour, rect):
     shape_surf = pg.Surface(pg.Rect(rect).size, pg.SRCALPHA)
-    pg.draw.rect(shape_surf, color, shape_surf.get_rect())
+    pg.draw.rect(shape_surf, colour, shape_surf.get_rect())
     surface.blit(shape_surf, rect)
 
 
@@ -120,39 +121,52 @@ def next_piece():
     is_t_spin = type(cur_piece) == tet.TPiece and last_movement == "ROTATE" and cur_piece.t_spin_corners_satisfied()
     lines_cleared = cur_piece.place()
     if lines_cleared > 0:
-        global score, level, lines_to_next_level, can_b2b
+        global score, level, lines_to_next_level, can_b2b, current_text, current_text_alpha
         combo_count += 1
         if combo_count > 0:
             score += SCORING_BASE_VALUES["Combo"] * level * combo_count
-            print("COMBO: " + str(combo_count))
+            current_text[1] = f"{combo_count}X COMBO (+ {SCORING_BASE_VALUES['Combo'] * level * combo_count})"
+        else:
+            current_text[1] = ""
 
         if lines_cleared == 4:
             if can_b2b:
-                score += int(SCORING_BASE_VALUES[4] * level * BACK_TO_BACK_MULTIPLIER)  # the multiplier is a float
-                print("B2B TETRIS")
+                increment = int(SCORING_BASE_VALUES[4] * level * BACK_TO_BACK_MULTIPLIER)  # the multiplier is a float
+                score += increment
+                current_text[0] = f"TETRIS (+{increment})"
+                current_text[1] = "Back-to-Back"
+                current_text_alpha = 300
             else:
-                score += SCORING_BASE_VALUES[4] * level
-                print("TETRIS")
+                increment = SCORING_BASE_VALUES[4] * level
+                score += increment
+                current_text[0] = f"TETRIS (+{increment})"
+                current_text_alpha = 255
                 can_b2b = True
         elif is_t_spin:
             if can_b2b:
-                score += int(SCORING_BASE_VALUES["TSpin" + str(lines_cleared)] * level * BACK_TO_BACK_MULTIPLIER)
-                print("B2B T-SPIN (" + str(lines_cleared) + " lines)")
+                increment = int(SCORING_BASE_VALUES["TSpin" + str(lines_cleared)] * level * BACK_TO_BACK_MULTIPLIER)
+                score += increment
+                current_text[0] = f"T-SPIN {NUMBER_TO_WORD[lines_cleared]} (+{increment})"
+                current_text[1] = "Back-to-Back"
+                current_text_alpha = 300
             else:
-                score += SCORING_BASE_VALUES["TSpin" + str(lines_cleared)] * level
-                print("T-SPIN (" + str(lines_cleared) + " lines)")
+                increment = SCORING_BASE_VALUES["TSpin" + str(lines_cleared)] * level
+                score += increment
+                current_text[0] = f"T-SPIN {NUMBER_TO_WORD[lines_cleared]} (+{increment})"
+                current_text_alpha = 255
                 can_b2b = True
         elif 0 < lines_cleared <= 3:
             can_b2b = False
-            score += SCORING_BASE_VALUES[lines_cleared] * level
+            increment = SCORING_BASE_VALUES[lines_cleared] * level
+            score += increment
+            current_text[0] = f"{NUMBER_TO_WORD[lines_cleared]} (+{increment})"
+            current_text_alpha = 230
 
         lines_to_next_level -= lines_cleared
         if lines_to_next_level <= 0:
             level += 1
             lines_to_next_level += get_lines_to_next_level()
     else:
-        if combo_count > 0:
-            print("COMBO BREAK")
         combo_count = -1
 
     if field.garbage_out():
@@ -252,7 +266,7 @@ def setup():
     update_hold_surface()
     update_next()
 
-    hs_surface = pygame.Surface(HSCORE_SIZE)
+    hs_surface = pg.Surface(HSCORE_SIZE)
     hs_surface.fill(GRID_COLOUR)
     text = FONT.render("HIGH SCORE:", True, TEXT_COLOUR)
     score_text = FONT.render(str(HIGH_SCORE), True, TEXT_COLOUR)
@@ -290,19 +304,30 @@ def write_high_score(num):
         f.write(str(num))
 
 
-def write_impact_text(text):
-    pass
+def write_impact_text(header, small_text, alpha):
+    text_surface.fill(BG_COLOUR)
+    text1 = FONT.render(header, True, TEXT_COLOUR)
+    text1.set_alpha(alpha)
+    text2 = SMALL_FONT.render(small_text, True, TEXT_COLOUR)
+    text2.set_alpha(alpha)
+
+    line1_x_pos = SCORE_SIZE[0] - text1.get_rect().width - MARGIN
+    line2_x_pos = SCORE_SIZE[0] - text2.get_rect().width - MARGIN
+
+    text_surface.blit(text1, (line1_x_pos, MARGIN))
+    text_surface.blit(text2, (line2_x_pos, FONT_SIZE + MARGIN))
+    window.blit(text_surface, TEXT_LOCATION)
 
 
 if __name__ == "__main__":
     # setup global variables
-    clock = pygame.time.Clock()
+    clock = pg.time.Clock()
     window = pg.display.set_mode(WINDOW_SIZE)
     field_surface = pg.Surface(FIELD_SIZE)
     next_piece_surface = pg.Surface(NEXT_SIZE)
     score_surface = pg.Surface(SCORE_SIZE)
     hold_surface = pg.Surface(HOLD_SIZE)
-    text_surface = pg.Surface(TEXT_BOX_SIZE, pg.SRCALPHA)
+    text_surface = pg.Surface(TEXT_BOX_SIZE)
     window_open = True
     selector = Bag()
     field = Playfield()
@@ -324,6 +349,9 @@ if __name__ == "__main__":
     lines_to_next_level = get_lines_to_next_level()
     ghost_coords = cur_piece.get_ghost_coords()
     HIGH_SCORE = get_high_score()
+
+    current_text = ["PLACEHOLDER", "TEXT"]
+    current_text_alpha = 0
 
     setup()
 
@@ -387,7 +415,7 @@ if __name__ == "__main__":
                             next_move = get_new_next_move_val()
                             ghost_coords = cur_piece.get_ghost_coords()
 
-        keys = pygame.key.get_pressed()
+        keys = pg.key.get_pressed()
         if keys[pg.K_LEFT]:
             move_timer += 1  # keep track of how long key has been held
             if move_timer >= MOVE_DELAY:
@@ -421,6 +449,10 @@ if __name__ == "__main__":
 
         if countdown_activated:
             place_countdown -= 1
+
+        if current_text_alpha > 0:
+            current_text_alpha -= 2
+            write_impact_text(current_text[0], current_text[1], min(max(current_text_alpha, 0), 255))
 
         update_field()
         update_score()
