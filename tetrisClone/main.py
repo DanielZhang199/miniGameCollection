@@ -20,15 +20,16 @@ SCORE_COORDS = 675, 640
 
 HOLD_SIZE = 190, 140
 HOLD_COORDS = 30, 20
-TEXT_BOX_SIZE = 240, 200
-TEXT_LOCATION = 30, 200
+TEXT_BOX_SIZE = 250, 200
+TEXT_LOCATION = 0, 200
 
 MARGIN = 15
 
 pg.font.init()
 FONT_SIZE = 45
 FONT = pg.font.SysFont('Lucon.ttf', FONT_SIZE)
-SMALL_FONT = pg.font.SysFont('Lucon.ttf', FONT_SIZE - 10)
+BIG_FONT = pg.font.SysFont('Lucon.ttf', FONT_SIZE + 10)
+SMALL_FONT = pg.font.SysFont('Lucon.ttf', FONT_SIZE - 9)
 TEXT_COLOUR = (255,) * 3
 
 BG_COLOUR = (95,) * 3
@@ -124,43 +125,47 @@ def next_piece():
         global score, level, lines_to_next_level, can_b2b, current_text, current_text_alpha
         combo_count += 1
         if combo_count > 0:
-            score += SCORING_BASE_VALUES["Combo"] * level * combo_count
-            current_text[1] = f"{combo_count}X COMBO (+ {SCORING_BASE_VALUES['Combo'] * level * combo_count})"
+            combo_bonus = SCORING_BASE_VALUES["Combo"] * level * combo_count
+            score += combo_bonus
+            current_text[1] = f"{combo_count} COMBO "
         else:
+            combo_bonus = 0
             current_text[1] = ""
 
         if lines_cleared == 4:
             if can_b2b:
                 increment = int(SCORING_BASE_VALUES[4] * level * BACK_TO_BACK_MULTIPLIER)  # the multiplier is a float
                 score += increment
-                current_text[0] = f"TETRIS (+{increment})"
-                current_text[1] = "Back-to-Back"
-                current_text_alpha = 300
+                current_text[0] = "TETRIS "
+                current_text[1] = "B2B "
+                current_text_alpha = 360
             else:
                 increment = SCORING_BASE_VALUES[4] * level
                 score += increment
-                current_text[0] = f"TETRIS (+{increment})"
-                current_text_alpha = 255
+                current_text[0] = f"TETRIS"
+                current_text_alpha = 300
                 can_b2b = True
         elif is_t_spin:
             if can_b2b:
                 increment = int(SCORING_BASE_VALUES["TSpin" + str(lines_cleared)] * level * BACK_TO_BACK_MULTIPLIER)
                 score += increment
-                current_text[0] = f"T-SPIN {NUMBER_TO_WORD[lines_cleared]} (+{increment})"
-                current_text[1] = "Back-to-Back"
-                current_text_alpha = 300
+                current_text[0] = f"T-SPIN {NUMBER_TO_WORD[lines_cleared]}"
+                current_text[1] = "B2B "
+                current_text_alpha = 400
             else:
                 increment = SCORING_BASE_VALUES["TSpin" + str(lines_cleared)] * level
                 score += increment
-                current_text[0] = f"T-SPIN {NUMBER_TO_WORD[lines_cleared]} (+{increment})"
-                current_text_alpha = 255
+                current_text[0] = f"T-SPIN {NUMBER_TO_WORD[lines_cleared]}"
+                current_text_alpha = 330
                 can_b2b = True
-        elif 0 < lines_cleared <= 3:
+        else:
             can_b2b = False
             increment = SCORING_BASE_VALUES[lines_cleared] * level
             score += increment
-            current_text[0] = f"{NUMBER_TO_WORD[lines_cleared]} (+{increment})"
-            current_text_alpha = 230
+            current_text[0] = f"{NUMBER_TO_WORD[lines_cleared]}"
+            current_text_alpha = 255
+
+        current_text[1] += f"(+ {increment + combo_bonus})"
 
         lines_to_next_level -= lines_cleared
         if lines_to_next_level <= 0:
@@ -306,13 +311,15 @@ def write_high_score(num):
 
 def write_impact_text(header, small_text, alpha):
     text_surface.fill(BG_COLOUR)
-    text1 = FONT.render(header, True, TEXT_COLOUR)
+    text1 = BIG_FONT.render(header, True, TEXT_COLOUR)
+    if text1.get_rect().width > 250:
+        text1 = FONT.render(header, True, TEXT_COLOUR)
     text1.set_alpha(alpha)
     text2 = SMALL_FONT.render(small_text, True, TEXT_COLOUR)
     text2.set_alpha(alpha)
 
-    line1_x_pos = SCORE_SIZE[0] - text1.get_rect().width - MARGIN
-    line2_x_pos = SCORE_SIZE[0] - text2.get_rect().width - MARGIN
+    line1_x_pos = TEXT_BOX_SIZE[0] - text1.get_rect().width - MARGIN
+    line2_x_pos = TEXT_BOX_SIZE[0] - text2.get_rect().width - MARGIN
 
     text_surface.blit(text1, (line1_x_pos, MARGIN))
     text_surface.blit(text2, (line2_x_pos, FONT_SIZE + MARGIN))
