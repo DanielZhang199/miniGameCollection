@@ -189,12 +189,12 @@ class Piece:
             # helper function above sets coordinates, we only need to change rotation value
             self._rotation = orientation
         else:
-            kicks = self._get_kicks(orientation)
-            for dx, dy in kicks:
+            for dx, dy in self._get_kicks(orientation):
                 if self._try_set_coords([[x + dx, y + dy] for x, y in coords]):
                     self._rotation = orientation
                     self._corner[0] += dx
                     self._corner[1] += dy
+                    break
 
     def _try_set_coords(self, coords):
         """
