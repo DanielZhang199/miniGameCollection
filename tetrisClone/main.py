@@ -138,12 +138,12 @@ def next_piece():
                 score += increment
                 current_text[0] = "TETRIS "
                 current_text[1] = "B2B "
-                current_text_alpha = 360
+                current_text_alpha = 950
             else:
                 increment = SCORING_BASE_VALUES[4] * level
                 score += increment
                 current_text[0] = f"TETRIS"
-                current_text_alpha = 300
+                current_text_alpha = 860
                 can_b2b = True
         elif is_t_spin:
             if can_b2b:
@@ -151,19 +151,19 @@ def next_piece():
                 score += increment
                 current_text[0] = f"T-SPIN {NUMBER_TO_WORD[lines_cleared]}"
                 current_text[1] = "B2B "
-                current_text_alpha = 400
+                current_text_alpha = 980
             else:
                 increment = SCORING_BASE_VALUES["TSpin" + str(lines_cleared)] * level
                 score += increment
                 current_text[0] = f"T-SPIN {NUMBER_TO_WORD[lines_cleared]}"
-                current_text_alpha = 330
+                current_text_alpha = 860
                 can_b2b = True
         else:
             can_b2b = False
             increment = SCORING_BASE_VALUES[lines_cleared] * level
             score += increment
             current_text[0] = f"{NUMBER_TO_WORD[lines_cleared]}"
-            current_text_alpha = 255
+            current_text_alpha = 800
 
         current_text[1] += f"(+ {increment + combo_bonus})"
 
@@ -458,7 +458,7 @@ if __name__ == "__main__":
             place_countdown -= 1
 
         if current_text_alpha > 0:
-            current_text_alpha -= 2
+            current_text_alpha -= 10
             write_impact_text(current_text[0], current_text[1], min(max(current_text_alpha, 0), 255))
 
         update_field()
