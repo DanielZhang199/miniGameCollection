@@ -453,6 +453,8 @@ if __name__ == "__main__":
                     window_open = next_piece()
                     used_hold = 0
                 countdown_activated = True
+            else:
+                last_movement = "DOWN"
 
         if countdown_activated:
             place_countdown -= 1
