@@ -32,11 +32,3 @@ class Bag:
         :return: (tuple) of integers representing the next n inputs
         """
         return tuple(self._queue[:n])
-
-
-if __name__ == "__main__":
-    test = Bag()
-    for i in range(5):
-        for j in range(14):
-            print(test.next(), end=", ")
-        print()

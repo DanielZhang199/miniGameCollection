@@ -88,27 +88,3 @@ class Playfield:
     @staticmethod
     def get_dimensions():
         return WIDTH, HEIGHT
-
-
-if __name__ == "__main__":
-    def print_field():
-        print("\nPRINTING FIELD:")
-        print("=" * 10)
-        for i in range(HEIGHT):
-            for j in range(WIDTH):
-                print(str(testBoard.is_clear(j, HEIGHT - i - 1))[0], end="")
-            print()
-        print("=" * 10)
-
-    testBoard = Playfield()
-    testBoard.add_blocks([(x, 0) for x in range(9)] + [(x, 2) for x in range(9)] +
-                         [(2, 1), (4, 1), (2, 3), (3, 4), (2, 4)], (1, 1, 1))
-    print_field()
-    print("Score = " + str(testBoard.add_blocks([(9, 0), (9, 1), (9, 2), (9, 3)], (0, 0, 0))))
-    print_field()
-    print("Score = " + str(testBoard.add_blocks([(9, 19)], (0, 0, 0))))
-    print_field()
-    print(testBoard.garbage_out())
-    print("Score = " + str(testBoard.add_blocks([(9, 20), (9, 22)], (0, 0, 0))))
-    print_field()
-    print(testBoard.garbage_out())
