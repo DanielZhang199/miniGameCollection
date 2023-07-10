@@ -1,5 +1,3 @@
-# todo: game over screen and documentation
-
 import pygame as pg
 from tetrisClone.files.bag import Bag
 from tetrisClone.files.playfield import Playfield
@@ -194,6 +192,11 @@ class SurfaceHold:
         self.surface.blit(self.static_text, self.text_pos)
 
     def update(self, held: tet.Piece):
+        """
+        takes in a piece as input, and displays that piece on the surface
+        :param held: currently held tetris piece
+        :return: (nothing)
+        """
         self._clear()
         if type(held) == tet.IPiece or type(held) == tet.OPiece:
             offset = (HOLD_SIZE[0] // 7, HOLD_SIZE[1] // 9)
@@ -227,6 +230,11 @@ class SurfaceNext(SurfaceHold):
         self.update()
 
     def update(self, _=None):
+        """
+        method violates Liskov substitution principle; displays the next 5 pieces in the bag onto surface
+        :param _: method must accept a parameter due to inheritance
+        :return: (nothing)
+        """
         self._clear()
         next_pieces = self._bag.show_next_n(5)
         for i, piece_num in enumerate(next_pieces):
@@ -244,6 +252,7 @@ class SurfaceText:
     """
     Class for displaying text when line clears happen
     """
+    FADE_RATE = 10
 
     def __init__(self):
         self.surface = pg.Surface(TEXT_BOX_SIZE)
@@ -253,12 +262,23 @@ class SurfaceText:
         self.alpha = 0
 
     def write(self, text1, text2, alpha):
+        """
+        sets the main text and subtext and alpha values
+        :param text1: (str) large text to be shown on top
+        :param text2: (str) small text to display score or combo info
+        :param alpha: (int) positive integer to represent how long to display/how transparent the text is
+        :return: (nothing)
+        """
         self.text1 = text1
         self.text2 = text2
         self.alpha = alpha
         self.update()
 
     def update(self):
+        """
+        renders the text onto surface and lowers the transparency
+        :return: (nothing)
+        """
         self.surface.fill(BG_COLOUR)
         text1 = BIG_FONT.render(self.text1, True, TEXT_COLOUR)
         if text1.get_rect().width > 250:
@@ -272,18 +292,12 @@ class SurfaceText:
 
         self.surface.blit(text1, (line1_x_pos, MARGIN))
         self.surface.blit(text2, (line2_x_pos, FONT_SIZE + MARGIN))
-        self.alpha -= 10
+        self.alpha -= self.FADE_RATE
 
 
 class TetrisGame:
     """
-    class for tetris game window
-    Attributes:
-        - display: pygame.surface
-        - options: (dict) values for infinity, ghost, and max rotates
-        - bag: (Bag) 7-bag piece generator
-        - current: (Piece) current user controlled piece
-        - field: (Playfield) current field state
+    class for tetris game window; instantiating object will run an instance of the game
     """
     # Define movement constants
     MOVE_DELAY = 10  # Frames between continuous movements
@@ -295,7 +309,7 @@ class TetrisGame:
     def __init__(self, infinity=False, ghost=True, max_rotates=15, music=None):
         self.display = pg.display.set_mode(WINDOW_SIZE)
         self.display.fill(BG_COLOUR)
-        pg.display.set_caption("Object Oriented Tetris")
+        pg.display.set_caption("Tetris 2.1")
         self._options = {"INFINITY": infinity, "GHOST": ghost, "MAX_ROTATES": max_rotates}
         if music is not None:  # I don't plan on writing a soundtrack, so only one song will play :D
             pg.mixer.music.load(music)
@@ -320,16 +334,13 @@ class TetrisGame:
         self.display.blit(self._surface_next.surface, NEXT_COORDS)
         self._surface_text = SurfaceText()
         self.running = True
-        self.start()
+        self.over = False
+        self._start()
 
-    def start(self):
-        """
-        starts a new tetris game
-        :return: (nothing)
-        """
+    def _start(self):
         self.render_hs()
 
-        while self.running:
+        while self.running and not self.over:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self.running = False
@@ -357,6 +368,30 @@ class TetrisGame:
             pg.time.Clock().tick(FPS)
 
         write_high_score(self._surface_score.score)
+        if self.over and self.running:
+            self.pause(text="GAME OVER")
+            self.restart()
+
+    def restart(self):
+        self.bag = Bag()
+        self.field = Playfield()
+        self.current = tet.num_to_piece(self.bag.next())(self.field)
+        self.held = None
+        self.level = 1
+        self.game_state = {"lines": self._lines_to_next(), "next_move": self._get_next_move(), "move_timer": 0,
+                           "drop_timer": 0, "rotates_left": self._options["MAX_ROTATES"], "combo_count": -1,
+                           "b2b": False, "holds": 0, "last_action": "", "place_delay": 0}
+        self._surface_field = SurfaceField(self.field, self.current)
+        self.display.blit(self._surface_field.surface, FIELD_COORDS)
+        self._surface_score = SurfaceScore()
+        self.display.blit(self._surface_score.surface, SCORE_COORDS)
+        self._surface_hold = SurfaceHold()
+        self.display.blit(self._surface_hold.surface, HOLD_COORDS)
+        self._surface_next = SurfaceNext(self.bag)
+        self.display.blit(self._surface_next.surface, NEXT_COORDS)
+        self._surface_text = SurfaceText()
+        self.over = False
+        self._start()
 
     def _update_field(self):
         self._surface_field.update(self._options["GHOST"])
@@ -368,6 +403,8 @@ class TetrisGame:
 
     def _handle_input(self, key):
         match key:
+            case pg.K_ESCAPE:
+                self.pause()
             case pg.K_LEFT:
                 self.game_state["move_timer"] = 0
                 if self.current.left():
@@ -490,7 +527,7 @@ class TetrisGame:
         else:
             self.game_state["combo_count"] = -1
         if self.field.garbage_out():
-            self.running = False
+            self.over = True
         self._next_piece()
 
     def _handle_scoring(self, lines, is_t_spin):
@@ -554,3 +591,21 @@ class TetrisGame:
         hs_surface.blit(text, (15, MARGIN))
         hs_surface.blit(score_text, (score_x_pos, FONT_SIZE + MARGIN))
         self.display.blit(hs_surface, HSCORE_COORDS)
+
+    def pause(self, text="GAME PAUSED"):
+        message = BIG_FONT.render(text, True, TEXT_COLOUR)
+        sub_message = FONT.render("Press Escape to Continue", True, TEXT_COLOUR)
+        message_pos = FIELD_SIZE[0] // 2 - message.get_rect().width // 2, FIELD_SIZE[1] // 2 - 50
+        sub_message_pos = FIELD_SIZE[0] // 2 - sub_message.get_rect().width // 2, FIELD_SIZE[1] // 2 + 50
+        self._surface_field.surface.blit(message, message_pos)
+        self._surface_field.surface.blit(sub_message, sub_message_pos)
+        self.display.blit(self._surface_field.surface, FIELD_COORDS)
+        pg.display.flip()
+        paused = True
+        while paused and self.running:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    self.running = False
+                elif event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        paused = False
