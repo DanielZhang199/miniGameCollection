@@ -1,9 +1,9 @@
 # todo: game over screen and documentation
 
 import pygame as pg
-from bag import Bag
-from playfield import Playfield
-import tetrominoes as tet
+from tetrisClone.files.bag import Bag
+from tetrisClone.files.playfield import Playfield
+import tetrisClone.files.tetrominoes as tet
 
 WINDOW_SIZE = 930, 840
 FPS = 60  # should be multiple of 30 (but other speeds should work)
