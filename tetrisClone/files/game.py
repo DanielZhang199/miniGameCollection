@@ -1,7 +1,7 @@
 import pygame as pg
-from tetrisClone.files.bag import Bag
-from tetrisClone.files.playfield import Playfield
-import tetrisClone.files.tetrominoes as tet
+from files.bag import Bag
+from files.playfield import Playfield
+import files.tetrominoes as tet
 
 WINDOW_SIZE = 930, 840
 FPS = 60  # should be multiple of 30 (but other speeds should work)
@@ -33,7 +33,7 @@ EMPTY_COLOUR = (10,) * 3
 
 VOLUME = 0.1
 SCORING_BASE_VALUES = {1: 100, 2: 300, 3: 500, 4: 800, "SoftDrop": 1, "HardDrop": 2, "Combo": 50,
-                       "TSpin1": 800, "TSpin2": 1200, "TSpin3": 1600}  # zero line t-spin not implemented
+                       "TSpin0": 400, "TSpin1": 800, "TSpin2": 1200, "TSpin3": 1600}
 NUMBER_TO_WORD = {1: "SINGLE", 2: "DOUBLE", 3: "TRIPLE"}
 BACK_TO_BACK_MULTIPLIER = 1.5  # for tetris and t spins
 
@@ -526,6 +526,11 @@ class TetrisGame:
             self._handle_scoring(lines_cleared, is_t_spin)
         else:
             self.game_state["combo_count"] = -1
+            if is_t_spin:
+                score_increase = SCORING_BASE_VALUES["TSpin0"]
+                self._surface_text.write("T-SPIN", f"(+ {score_increase})", 800)
+                self._increment_score(score_increase, False)
+
         if self.field.garbage_out():
             self.over = True
         self._next_piece()
@@ -534,12 +539,10 @@ class TetrisGame:
         score_increase = 0
         level_up = False
         if self.game_state["combo_count"] > 0:
-            pass
             combo_bonus = SCORING_BASE_VALUES["Combo"] * self.level * self.game_state["combo_count"]
             score_increase += combo_bonus
             text2 = f"{self.game_state['combo_count']} COMBO "
         else:
-            pass
             text2 = ""
 
         if lines == 4:
