@@ -51,7 +51,7 @@ class Piece:
         self._coordinates = self._abs_coords(self.default_piece_positions())
         self._rotation = 0
         self._field = pf
-        self._placed = False
+        self._last_move = None
         # all/most methods called on the piece will be with respect to the 'field', so it is also a field
 
     # GETTER METHODS:
@@ -60,6 +60,9 @@ class Piece:
 
     def get_coordinates(self):
         return self._coordinates
+
+    def get_last_action(self):
+        return self._last_move
 
     def _get_kicks(self, orientation):
         return DEFAULT_WALL_KICK_DATA[str(self._rotation) + ">" + str(orientation)]
@@ -104,6 +107,7 @@ class Piece:
         for coord in self._coordinates:
             coord[0] += n
         self._corner[0] += n
+        self._last_move = "MOVE"
         return True
 
     def drop(self):
@@ -117,17 +121,15 @@ class Piece:
         for coord in self._coordinates:
             coord[1] -= 1
         self._corner[1] -= 1
+        self._last_move = "DROP"
         return True
 
     def place(self):
         """
-        if piece was not already placed down, places the piece and returns lines cleared, otherwise returns 0
+        places the piece and returns lines cleared, otherwise returns 0
         :return: (int) lines cleared from placing that piece
         """
-        if not self._placed:
-            self._placed = True
-            return self._field.add_blocks(self._coordinates, self.get_colour())
-        return 0  # return zero anyways
+        return self._field.add_blocks(self._coordinates, self.get_colour())
 
     def hard_drop(self):
         """
@@ -188,12 +190,14 @@ class Piece:
         if self._try_set_coords(coords):
             # helper function above sets coordinates, we only need to change rotation value
             self._rotation = orientation
+            self._last_move = "ROTATE"
         else:
             for dx, dy in self._get_kicks(orientation):
                 if self._try_set_coords([[x + dx, y + dy] for x, y in coords]):
                     self._rotation = orientation
                     self._corner[0] += dx
                     self._corner[1] += dy
+                    self._last_move = "ROTATE"
                     break
 
     def _try_set_coords(self, coords):

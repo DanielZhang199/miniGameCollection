@@ -323,7 +323,7 @@ class TetrisGame:
         self.level = 1
         self.game_state = {"lines": self._lines_to_next(), "next_move": self._get_next_move(), "move_timer": 0,
                            "drop_timer": 0, "rotates_left": max_rotates, "combo_count": -1, "b2b": False,
-                           "holds": 0, "last_action": "", "place_delay": 0}
+                           "holds": 0, "place_delay": 0}
         self._surface_field = SurfaceField(self.field, self.current)
         self.display.blit(self._surface_field.surface, FIELD_COORDS)
         self._surface_score = SurfaceScore()
@@ -355,8 +355,6 @@ class TetrisGame:
                 if not self.current.drop():
                     if self.game_state["place_delay"] <= 0:
                         self._place_piece()
-                else:
-                    self.game_state["last_action"] = "DOWN"
 
             self._update_field()
 
@@ -380,7 +378,7 @@ class TetrisGame:
         self.level = 1
         self.game_state = {"lines": self._lines_to_next(), "next_move": self._get_next_move(), "move_timer": 0,
                            "drop_timer": 0, "rotates_left": self._options["MAX_ROTATES"], "combo_count": -1,
-                           "b2b": False, "holds": 0, "last_action": "", "place_delay": 0}
+                           "b2b": False, "holds": 0, "place_delay": 0}
         self._surface_field = SurfaceField(self.field, self.current)
         self.display.blit(self._surface_field.surface, FIELD_COORDS)
         self._surface_score = SurfaceScore()
@@ -419,7 +417,6 @@ class TetrisGame:
                     self._drop_helper()
             case pg.K_SPACE:
                 self._increment_score(SCORING_BASE_VALUES["HardDrop"] * self.current.hard_drop())
-                self.game_state["last_action"] = "DOWN"
                 self._place_piece()
             case pg.K_x | pg.K_UP:
                 self.current.rotate_right()
@@ -447,7 +444,6 @@ class TetrisGame:
         """
         runs whenever a piece rotates, updates needed values after rotations
         """
-        self.game_state["last_action"] = "ROTATE"
         self._surface_field.calculate_ghost()
         if self.game_state["rotates_left"] >= 0:
             self.game_state["place_delay"] = self.MIN_PLACE_DELAY
@@ -459,11 +455,9 @@ class TetrisGame:
         runs whenever a piece moves. updates needed values for movement
         """
         self._surface_field.calculate_ghost()
-        self.game_state["last_action"] = 'SIDE'
 
     def _drop_helper(self):
         self._increment_score(SCORING_BASE_VALUES["SoftDrop"])
-        self.game_state["last_action"] = "DOWN"
         self.game_state["place_delay"] = self.MIN_PLACE_DELAY
 
     def _handle_held(self, keys):
@@ -501,7 +495,6 @@ class TetrisGame:
         updates values whenever a new piece takes the field
         """
         self.game_state["rotates_left"] = self._options["MAX_ROTATES"]
-        self.game_state["last_action"] = ""
         self.game_state["next_move"] = self._get_next_move()
         self._surface_field.set_cur_piece(self.current)
         self._surface_next.update()
@@ -518,7 +511,7 @@ class TetrisGame:
         self.game_state["holds"] = 0  # only reset this when piece is placed
 
         # placing a piece also clears lines, need to test t-spin before clearing/checking if lines will be cleared
-        is_t_spin = (type(self.current) == tet.TPiece and self.game_state["last_action"] == "ROTATE" and
+        is_t_spin = (type(self.current) == tet.TPiece and self.current.get_last_action() == "ROTATE" and
                      self.current.t_spin_corners_satisfied())
         lines_cleared = self.current.place()
         if lines_cleared > 0:
