@@ -5,11 +5,13 @@ import files.tetrominoes as tet
 
 WINDOW_SIZE = 930, 840
 FPS = 60  # should be multiple of 30 (but other speeds should work)
+
+GRID_WIDTH = 4
 SQUARE_SIZE = 40
 FIELD_COORDS = 250, 20
 FIELD_SIZE = SQUARE_SIZE * 10, SQUARE_SIZE * 20  # currently 400 by 800
 GRID_DIMENSIONS = Playfield.get_dimensions()
-GRID_WIDTH = 4
+
 FONT_SIZE = 45
 
 NEXT_SIZE = 190, 480
@@ -69,7 +71,7 @@ class SurfaceField:
     """
 
     def __init__(self, playfield: Playfield, cur_piece: tet.Piece):
-        self.surface = pg.Surface(FIELD_SIZE)
+        self.surface = pg.Surface([FIELD_SIZE[0] + GRID_WIDTH // 2, FIELD_SIZE[1] + GRID_WIDTH // 2])
         self._field = playfield  # reference to playfield object being used
         self._cur_piece = cur_piece  # reference to current piece object (should not ever be none)
         self._ghost_coords = self._cur_piece.get_ghost_coords()
@@ -132,13 +134,13 @@ class SurfaceField:
             pg.draw.rect(self.surface, colour, pg.Rect(x, y, SQUARE_SIZE, SQUARE_SIZE))
 
     def _draw_grid(self):
-        for x in range(GRID_DIMENSIONS[0]):
+        for x in range(GRID_DIMENSIONS[0] + 1):
             x *= SQUARE_SIZE
             pg.draw.line(self.surface, GRID_COLOUR, (x, 0), (x, FIELD_SIZE[1]), GRID_WIDTH)
 
-        for y in range(GRID_DIMENSIONS[1]):
+        for y in range(GRID_DIMENSIONS[1] + 1):
             y *= SQUARE_SIZE
-            pg.draw.line(self.surface, GRID_COLOUR, (0, y), (FIELD_SIZE[0], y), GRID_WIDTH)
+            pg.draw.line(self.surface, GRID_COLOUR, (0, y), (FIELD_SIZE[0] + GRID_WIDTH, y), GRID_WIDTH)
 
 
 class SurfaceScore:
