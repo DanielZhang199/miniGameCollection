@@ -47,6 +47,7 @@ def create_hexagon_window():
         y = start_y + (len(columns) - num_rows) * hex_radius * (13 / 15)  # apothem is 13/15 of the radius
         next_colour = last_row_colour
         for row in range(num_rows, 0, -1):
+            row += max(i - center + 1, 0)
             draw_hexagon(canvas, x, y, hex_radius, colours[next_colour])
             canvas.create_text(x, y, text=f"{col}{row}", fill="black", font='Helvetica 15 bold')
             next_colour += 1
