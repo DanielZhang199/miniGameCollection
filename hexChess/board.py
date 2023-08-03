@@ -1,4 +1,5 @@
-# piece objects are not implemented yet, so tests can't be written
+from pieces import *
+
 
 class HexBoard:
     """
@@ -29,6 +30,20 @@ class HexBoard:
         """
         return self._pieces.get(pos, None)
 
+    def capturable_by(self, pos):
+        """
+        returns opposite side of piece on the position (i.e. the side that can capture the piece)
+        or False if no piece is on the square
+        :param pos:
+        :return:
+        """
+        p = self._pieces.get(pos, None)
+        if p is None:
+            return False
+        if p.side == "W":
+            return "B"
+        return "W"
+
     def is_clear(self, pos: tuple):
         """
         False if the square is occupied by a piece or is out of bounds
@@ -42,10 +57,11 @@ class HexBoard:
     def update(self, piece, move, flag=None):
         """
         moves piece to new position changes which turn it is, taking into account captures and special moves
+        will return string for 'check', 'checkmate', 'stalemate', 'promotion', and 'insufficient material'
         :param piece: (Piece) which has moved
         :param move: (str) position of piece after move
         :param flag: (int) 0 for castling, 1 for enpassant, 'Q', 'R', 'N', 'B' for promotion
-        :return:
+        :return: (str)
         """
         pass
 
@@ -56,12 +72,14 @@ class HexBoard:
         """
         pass
 
-    def check_status(self):
+    def test_check(self, start, end):
         """
-        checks if the game is over, returns True if it is, updates self.status to the game result
-        :return:
+        returns true if the attempted move leads to check
+        THE COORDINATES ENTERED NEED TO BE TO A VALID MOVE A PIECE CAN MAKE
+        :param start: (tuple) coordinates of a square with piece
+        :param end: (tuple) coordinates of a square the piece can move to
+        :return: (bool)
         """
-        pass
 
     def undo(self):
         """
@@ -71,16 +89,25 @@ class HexBoard:
         """
         pass
 
+    def get_legal_moves(self, pos):
+        """
+        returns set of all legal moves (squares) a piece at the x, y position can make, empty set if no piece is there
+        :param pos: (tuple)
+        :return: (set) of coordinates (tuple)
+        """
+        p = self.get_piece(pos)
+        if p is None:
+            return set()
+        # result = set()
+        return p.get_moves()  # temporary
+
 
 if __name__ == "__main__":
-    from pieces import Pawn
+
     board = HexBoard()
     board._add_piece(Pawn((2, 1), "W", board))
-    board._add_piece(Pawn((3, 2), "B", board))
-    print(board.is_clear((2, 1)))
-    print(board.is_clear((2, 2)))
-    print(board.is_clear((2, 0)))
-    print(board.get_piece((2, 1)).get_moves())
-    print(board.get_piece((1, 1)).get_moves())
-    print(board.get_piece((3, 2)).get_moves())
+    board._add_piece(Rook((3, 2), "B", board))
+    board._add_piece(Pawn((3, 6), "W", board))
+    print(board.get_legal_moves((2, 1)))
+    print(sorted(list(board.get_legal_moves((3, 2)))))
 
